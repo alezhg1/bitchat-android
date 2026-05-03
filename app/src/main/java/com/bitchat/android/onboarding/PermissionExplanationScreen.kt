@@ -13,17 +13,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.layout.ContentScale
 import com.bitchat.android.R
 
 /**
  * Permission explanation screen shown before requesting permissions
- * Modern minimalist design with large centered title and simple permission list
+ * Modern design with background image and centered text overlay
  */
 @Composable
 fun PermissionExplanationScreen(
@@ -34,29 +37,23 @@ fun PermissionExplanationScreen(
     val colorScheme = MaterialTheme.colorScheme
     val scrollState = rememberScrollState()
 
-    // Gradient colors for decorative background
-    val gradientColors = listOf(
-        colorScheme.primary.copy(alpha = 0.15f),
-        colorScheme.secondary.copy(alpha = 0.08f),
-        Color.Transparent
-    )
-
     Box(
         modifier = modifier
     ) {
-        // Background gradient accent
+        // Background image (mountains/nature scene) with proper content scale
+        Image(
+            painter = painterResource(id = R.drawable.main_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            alignment = Alignment.Center,
+            contentScale = ContentScale.Crop
+        )
+
+        // Dark overlay to ensure text readability over the nature background
         Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(400.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = gradientColors,
-                        center = Offset(0.5f, -0.2f),
-                        radius = 1.0f
-                    )
-                )
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
         )
 
         // Scrollable content
@@ -68,51 +65,40 @@ fun PermissionExplanationScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(60.dp))
             
-            // Large centered title at the very top
+            // Large centered title at the very top - white text for contrast
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 48.sp,
-                    letterSpacing = 2.sp
+                    fontSize = 52.sp,
+                    letterSpacing = 3.sp
                 ),
-                color = colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                colorScheme.primary,
-                                colorScheme.secondary,
-                                colorScheme.tertiary
-                            )
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // Subtitle
-            Text(
-                text = "Для работы приложения нужно выдать следующие разрешения",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Medium
-                ),
-                color = colorScheme.onBackground.copy(alpha = 0.6f),
+                color = Color.White,
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(56.dp))
             
-            // Simple list of permission names (no cards, no blocks)
+            // Subtitle - white text for contrast
+            Text(
+                text = "Приложению необходимы следующие разрешения:",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 20.sp
+                ),
+                color = Color.White.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(40.dp))
+            
+            // Simple list of permission names (no cards, no blocks) - white text
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 permissionCategories.forEach { category ->
@@ -125,16 +111,16 @@ fun PermissionExplanationScreen(
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
+                                fontSize = 20.sp
                             ),
-                            color = colorScheme.onBackground,
+                            color = Color.White.copy(alpha = 0.85f),
                             textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(72.dp))
         }
 
         // Fixed button at bottom
@@ -142,7 +128,7 @@ fun PermissionExplanationScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = colorScheme.surface,
+            color = colorScheme.surface.copy(alpha = 0.9f),
             shadowElevation = 8.dp
         ) {
             Button(
