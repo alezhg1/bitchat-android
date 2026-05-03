@@ -23,7 +23,7 @@ import com.bitchat.android.R
 
 /**
  * Permission explanation screen shown before requesting permissions
- * Explains why bitchat needs each permission and reassures users about privacy
+ * Modern minimalist design with large centered title and simple permission list
  */
 @Composable
 fun PermissionExplanationScreen(
@@ -34,11 +34,11 @@ fun PermissionExplanationScreen(
     val colorScheme = MaterialTheme.colorScheme
     val scrollState = rememberScrollState()
 
-    // Gradient colors for decorative elements
+    // Gradient colors for decorative background
     val gradientColors = listOf(
-        colorScheme.primary.copy(alpha = 0.3f),
-        colorScheme.secondary.copy(alpha = 0.2f),
-        colorScheme.tertiary.copy(alpha = 0.15f)
+        colorScheme.primary.copy(alpha = 0.15f),
+        colorScheme.secondary.copy(alpha = 0.08f),
+        Color.Transparent
     )
 
     Box(
@@ -49,12 +49,12 @@ fun PermissionExplanationScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(400.dp)
                 .background(
                     Brush.radialGradient(
                         colors = gradientColors,
-                        center = Offset(0.5f, 0f),
-                        radius = 0.8f
+                        center = Offset(0.5f, -0.2f),
+                        radius = 1.0f
                     )
                 )
         )
@@ -68,102 +68,73 @@ fun PermissionExplanationScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(80.dp))
             
-            // Decorative icon/illustration placeholder
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                colorScheme.primary,
-                                colorScheme.secondary
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🏕️",
-                    fontSize = 64.sp
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Large centered title
+            // Large centered title at the very top
             Text(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 42.sp
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 48.sp,
+                    letterSpacing = 2.sp
                 ),
                 color = colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                colorScheme.primary,
+                                colorScheme.secondary,
+                                colorScheme.tertiary
+                            )
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(48.dp))
             
-            // Welcome message
+            // Subtitle
             Text(
-                text = "добро пожаловать в чат лагеря",
+                text = "Для работы приложения нужно выдать следующие разрешения",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Medium
                 ),
-                color = colorScheme.primary,
+                color = colorScheme.onBackground.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
-            Text(
-                text = "Для работы приложения нужно выдать следующие разрешения",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = FontFamily.Monospace
-                ),
-                color = colorScheme.onBackground.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            // Styled list of permission names in cards
+            // Simple list of permission names (no cards, no blocks)
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 permissionCategories.forEach { category ->
-                    Surface(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        shadowElevation = 4.dp
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp, horizontal = 20.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = category.type.nameValue,
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        Text(
+                            text = "• ${category.type.nameValue}",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 18.sp
+                            ),
+                            color = colorScheme.onBackground,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(56.dp))
+            Spacer(modifier = Modifier.height(64.dp))
         }
 
         // Fixed button at bottom
@@ -172,23 +143,24 @@ fun PermissionExplanationScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
             color = colorScheme.surface,
-            shadowElevation = 12.dp
+            shadowElevation = 8.dp
         ) {
             Button(
                 onClick = onContinue,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorScheme.primary
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = stringResource(R.string.grant_permissions),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     ),
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
