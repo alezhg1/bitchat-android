@@ -2,21 +2,11 @@ package com.bitchat.android.onboarding
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Power
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,101 +36,69 @@ fun PermissionExplanationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 88.dp) // Leave space for the fixed button
+                .padding(bottom = 88.dp)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(48.dp))
             
-            // Header Section - matching AboutSheet style
+            // Large centered title
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 42.sp
+                ),
+                color = colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Welcome message
+            Text(
+                text = "добро пожаловать в чат лагеря",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = "Для работы приложения нужно выдать следующие разрешения",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace
+                ),
+                color = colorScheme.onBackground.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Simple list of permission names
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                permissionCategories.forEach { category ->
                     Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineLarge.copy(
+                        text = category.type.nameValue,
+                        style = MaterialTheme.typography.bodyLarge.copy(
                             fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 32.sp
+                            fontWeight = FontWeight.Medium
                         ),
-                        color = colorScheme.onBackground
+                        color = colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-
-                Text(
-                    text = stringResource(R.string.about_tagline),
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = colorScheme.onBackground.copy(alpha = 0.7f)
-                )
             }
 
-            // Privacy assurance section - matching AboutSheet card style
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Security,
-                            contentDescription = stringResource(R.string.cd_privacy_protected),
-                            tint = colorScheme.primary,
-                            modifier = Modifier
-                                .padding(top = 2.dp)
-                                .size(20.dp)
-                        )
-                        Column {
-                            Text(
-                                text = stringResource(R.string.privacy_protected),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = colorScheme.onBackground
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = stringResource(R.string.privacy_bullets),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = colorScheme.onBackground.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Section header
-            Text(
-                text = stringResource(R.string.permissions_header),
-                style = MaterialTheme.typography.labelLarge,
-                color = colorScheme.onBackground.copy(alpha = 0.7f),
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-            )
-
-            // Permission categories
-            permissionCategories.forEach { category ->
-                PermissionCategoryCard(
-                    category = category,
-                    colorScheme = colorScheme
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(48.dp))
         }
 
         // Fixed button at bottom
@@ -170,55 +128,5 @@ fun PermissionExplanationScreen(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PermissionCategoryCard(
-    category: PermissionCategory,
-    colorScheme: ColorScheme
-) {
-    Row(
-        verticalAlignment = Alignment.Top,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Icon(
-            imageVector = getPermissionIcon(category.type),
-            contentDescription = category.type.nameValue,
-            tint = colorScheme.primary,
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(
-                text = category.type.nameValue,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = category.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = colorScheme.onBackground.copy(alpha = 0.8f)
-            )
-
-        }
-    }
-}
-
-private fun getPermissionIcon(permissionType: PermissionType): ImageVector {
-    return when (permissionType) {
-        PermissionType.NEARBY_DEVICES -> Icons.Filled.Bluetooth
-        PermissionType.PRECISE_LOCATION -> Icons.Filled.LocationOn
-        PermissionType.BACKGROUND_LOCATION -> Icons.Filled.LocationOn
-        PermissionType.MICROPHONE -> Icons.Filled.Mic
-        PermissionType.NOTIFICATIONS -> Icons.Filled.Notifications
-        PermissionType.BATTERY_OPTIMIZATION -> Icons.Filled.Power
-        PermissionType.OTHER -> Icons.Filled.Settings
     }
 }
