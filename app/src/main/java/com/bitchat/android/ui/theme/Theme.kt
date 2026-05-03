@@ -16,31 +16,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 
-// Colors that match the iOS bitchat theme
+// NeoN Color Palette - Purple and Peach theme
+
+// Dark color scheme
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF39FF14),        // Bright green (terminal-like)
-    onPrimary = Color.Black,
-    secondary = Color(0xFF2ECB10),      // Darker green
-    onSecondary = Color.Black,
-    background = Color.Black,
-    onBackground = Color(0xFF39FF14),   // Green on black
-    surface = Color(0xFF111111),        // Very dark gray
-    onSurface = Color(0xFF39FF14),      // Green text
-    error = Color(0xFFFF5555),          // Red for errors
-    onError = Color.Black
+    primary = Color(0xFF8A2BE2),           // Акцентный фиолетовый
+    onPrimary = Color.White,
+    secondary = Color(0xFF9D4EDD),         // Светло-фиолетовый
+    onSecondary = Color.White,
+    tertiary = Color(0xFFFFA500),          // Персиковый/оранжевый
+    onTertiary = Color.White,
+    background = Color(0xFF121212),        // Тёмный фон
+    onBackground = Color(0xFFFAFAFA),      // Светлый текст
+    surface = Color(0xFF1E1E1E),           // Поверхность
+    onSurface = Color(0xFFFAFAFA),         // Текст на поверхности
+    surfaceVariant = Color(0xFF2D2D2D),    // Вариант поверхности
+    onSurfaceVariant = Color(0xFFE0E0E0),  // Текст на варианте поверхности
+    error = Color(0xFFF44336),             // Ошибка
+    onError = Color.White,
+    outline = Color(0xFF424242)            // Границы
 )
 
+// Light color scheme - основной светлый дизайн NeoN
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF008000),        // Dark green
+    primary = Color(0xFF8A2BE2),           // Акцентный фиолетовый
     onPrimary = Color.White,
-    secondary = Color(0xFF006600),      // Even darker green
+    secondary = Color(0xFF9D4EDD),         // Светло-фиолетовый
     onSecondary = Color.White,
-    background = Color.White,
-    onBackground = Color(0xFF008000),   // Dark green on white
-    surface = Color(0xFFF8F8F8),        // Very light gray
-    onSurface = Color(0xFF008000),      // Dark green text
-    error = Color(0xFFCC0000),          // Dark red for errors
-    onError = Color.White
+    tertiary = Color(0xFFFFA500),          // Персиковый/оранжевый для градиентов
+    onTertiary = Color.White,
+    background = Color(0xFFFAFAFA),        // Светло-серый фон (#fafafa)
+    onBackground = Color(0xFF333333),      // Тёмно-серый текст (#333)
+    surface = Color(0xFFFFFFFF),           // Белый фон поверхностей
+    onSurface = Color(0xFF333333),         // Тёмно-серый текст
+    surfaceVariant = Color(0xFFF5F5F7),    // Светло-серый вариант (#f5f5f7)
+    onSurfaceVariant = Color(0xFF666666),  // Серый второстепенный текст (#666)
+    error = Color(0xFFF44336),             // Ошибка
+    onError = Color.White,
+    outline = Color(0xFFE0E0E0)            // Границы
 )
 
 @Composable

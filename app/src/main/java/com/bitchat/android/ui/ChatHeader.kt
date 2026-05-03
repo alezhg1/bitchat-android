@@ -49,8 +49,8 @@ fun TorStatusDot(
     if (torStatus.mode != com.bitchat.android.net.TorMode.OFF) {
         val dotColor = when {
             torStatus.running && torStatus.bootstrapPercent < 100 -> Color(0xFFFF9500) // Orange - bootstrapping
-            torStatus.running && torStatus.bootstrapPercent >= 100 -> Color(0xFF00C851) // Green - connected
-            else -> Color.Red // Red - error/disconnected
+            torStatus.running && torStatus.bootstrapPercent >= 100 -> Color(0xFF8A2BE2) // Фиолетовый - подключен
+            else -> Color(0xFFF44336) // Красный - ошибка/отключен
         }
         Canvas(
             modifier = modifier
@@ -83,7 +83,7 @@ fun NoiseSessionIcon(
         )
         "established" -> Triple(
             Icons.Filled.Lock,
-            Color(0xFFFF9500), // Orange - secure
+            Color(0xFF8A2BE2), // Фиолетовый - защищено
             stringResource(R.string.cd_encrypted)
         )
         else -> { // "failed" or any other state
@@ -168,15 +168,15 @@ fun PeerCounter(
         is com.bitchat.android.geohash.ChannelID.Location -> {
             // Geohash channel: show geohash participants
             val count = geohashPeople.size
-            val green = Color(0xFF00C851) // Standard green
-            Pair(count, if (count > 0) green else Color.Gray)
+            val purple = Color(0xFF8A2BE2) // Фиолетовый NeoN
+            Pair(count, if (count > 0) purple else Color.Gray)
         }
         is com.bitchat.android.geohash.ChannelID.Mesh,
         null -> {
             // Mesh channel: show Bluetooth-connected peers (excluding self)
             val count = connectedPeers.size
-            val meshBlue = Color(0xFF007AFF) // iOS-style blue for mesh
-            Pair(count, if (isConnected && count > 0) meshBlue else Color.Gray)
+            val neonPurple = Color(0xFF9D4EDD) // Светло-фиолетовый NeoN для mesh
+            Pair(count, if (isConnected && count > 0) neonPurple else Color.Gray)
         }
     }
     
@@ -207,7 +207,7 @@ fun PeerCounter(
             Text(
                 text = stringResource(R.string.channel_count_prefix) + "${joinedChannels.size}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isConnected) Color(0xFF00C851) else Color.Red,
+                color = if (isConnected) Color(0xFF8A2BE2) else Color(0xFFF44336), // Фиолетовый или красный
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -302,7 +302,7 @@ private fun ChannelHeader(
         Text(
             text = stringResource(R.string.chat_channel_prefix, channel),
             style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFFFF9500), // Orange to match input field
+            color = colorScheme.tertiary, // Персиковый из темы NeoN
             modifier = Modifier
                 .align(Alignment.Center)
                 .clickable { onSidebarClick() }
@@ -389,7 +389,7 @@ private fun MainHeader(
                     modifier = Modifier
                         .size(16.dp)
                         .clickable { viewModel.openLatestUnreadPrivateChat() },
-                    tint = Color(0xFFFF9500)
+                    tint = colorScheme.tertiary // Персиковый NeoN
                 )
             }
 
@@ -417,7 +417,7 @@ private fun MainHeader(
                         Icon(
                             imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                             contentDescription = stringResource(R.string.cd_toggle_bookmark),
-                            tint = if (isBookmarked) Color(0xFF00C851) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                            tint = if (isBookmarked) colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f), // Фиолетовый NeoN
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -469,13 +469,13 @@ private fun LocationChannelsButton(
     
     val (badgeText, badgeColor) = when (selectedChannel) {
         is com.bitchat.android.geohash.ChannelID.Mesh -> {
-            "#mesh" to Color(0xFF007AFF) // iOS blue for mesh
+            "#mesh" to colorScheme.primary // Фиолетовый NeoN для mesh
         }
         is com.bitchat.android.geohash.ChannelID.Location -> {
             val geohash = (selectedChannel as com.bitchat.android.geohash.ChannelID.Location).channel.geohash
-            "#$geohash" to Color(0xFF00C851) // Green for location
+            "#$geohash" to colorScheme.tertiary // Персиковый NeoN для location
         }
-        null -> "#mesh" to Color(0xFF007AFF) // Default to mesh
+        null -> "#mesh" to colorScheme.primary // По умолчанию фиолетовый
     }
     
     Button(

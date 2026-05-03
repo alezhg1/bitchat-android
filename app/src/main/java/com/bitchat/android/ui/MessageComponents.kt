@@ -251,7 +251,7 @@ fun MessageItem(
         val (overrideProgress, _) = when (val st = message.deliveryStatus) {
             is com.bitchat.android.model.DeliveryStatus.PartiallyDelivered -> {
                 if (st.total > 0 && st.reached < st.total) {
-                    (st.reached.toFloat() / st.total.toFloat()) to Color(0xFF1E88E5) // blue while sending
+                    (st.reached.toFloat() / st.total.toFloat()) to colorScheme.primary // Фиолетовый NeoN для статуса отправки
                 } else null to null
             }
             else -> null to null
@@ -496,7 +496,7 @@ fun DeliveryStatusIcon(status: DeliveryStatus) {
             Text(
                 text = stringResource(R.string.status_delivered),
                 fontSize = 10.sp,
-                color = Color(0xFF007AFF), // Blue
+                color = colorScheme.primary, // Фиолетовый NeoN
                 fontWeight = FontWeight.Bold
             )
         }
