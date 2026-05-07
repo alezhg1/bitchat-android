@@ -151,3 +151,11 @@ dependencies {
     androidTestImplementation(libs.bundles.compose.testing)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+repositories {
+    maven { url = uri("https://jitpack.io") }
+}
+
+dependencies {
+    implementation("com.github.southernstorm:noise-java:1.0.0")
+}

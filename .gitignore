@@ -1,1 +1,38 @@
-Nothing should be ignored since only a Kotlin source file was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+```
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env*
+
+# Dependencies
+node_modules/
+vendor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.class
+*.jar
+*.war
+*.ear
+*.so
+*.dll
+*.dylib
+```
