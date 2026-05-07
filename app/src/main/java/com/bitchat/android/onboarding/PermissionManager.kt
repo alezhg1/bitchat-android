@@ -303,11 +303,11 @@ data class PermissionCategory(
 )
 
 enum class PermissionType(val nameValue: String) {
-    NEARBY_DEVICES("Nearby Devices"),
-    PRECISE_LOCATION("Precise Location"),
-    BACKGROUND_LOCATION("Background Location"),
-    MICROPHONE("Microphone"),
-    NOTIFICATIONS("Notifications"),
-    BATTERY_OPTIMIZATION("Battery Optimization"),
-    OTHER("Other")
+    NEARBY_DEVICES("Близкие устройства"),
+    PRECISE_LOCATION("Точная геопозиция"),
+    BACKGROUND_LOCATION("Фоновая геопозиция"),
+    MICROPHONE("Микрофон"),
+    NOTIFICATIONS("Уведомления"),
+    BATTERY_OPTIMIZATION("Оптимизация батареи"),
+    OTHER("Другое")
 }

@@ -68,17 +68,13 @@ fun PermissionExplanationScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
             
-            // Large centered title at the very top - white text for contrast
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 52.sp,
-                    letterSpacing = 3.sp
-                ),
-                color = Color.White,
-                textAlign = TextAlign.Center
+            // Logo image at the top
+            Image(
+                painter = painterResource(id = R.drawable.neon_logo),
+                contentDescription = null,
+                modifier = Modifier.size(200.dp),
+                alignment = Alignment.Center,
+                contentScale = ContentScale.Fit
             )
             
             Spacer(modifier = Modifier.height(56.dp))
