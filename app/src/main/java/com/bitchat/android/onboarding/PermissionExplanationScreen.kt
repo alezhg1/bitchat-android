@@ -121,18 +121,15 @@ fun PermissionExplanationScreen(
         }
 
         // Fixed button at bottom
-        Surface(
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            color = colorScheme.surface.copy(alpha = 0.9f),
-            shadowElevation = 8.dp
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Button(
                 onClick = onContinue,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorScheme.primary
                 ),
