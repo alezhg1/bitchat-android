@@ -135,7 +135,7 @@ fun FileViewerDialog(
 private fun tryOpenFile(context: Context, packet: BitchatFilePacket) {
     try {
         // First try to save to temp file and open
-        val tempFile = File.createTempFile("bitchat_", ".${packet.fileName.substringAfterLast(".")}", context.cacheDir)
+        val tempFile = File.createTempFile("neon_", ".${packet.fileName.substringAfterLast(".")}", context.cacheDir)
         tempFile.writeBytes(packet.content)
         tempFile.deleteOnExit()
 

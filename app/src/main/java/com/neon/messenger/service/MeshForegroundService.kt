@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 class MeshForegroundService : Service() {
 
     companion object {
-        private const val CHANNEL_ID = "bitchat_mesh_service"
+        private const val CHANNEL_ID = "neon_mesh_service"
         private const val NOTIFICATION_ID = 10001
 
         const val ACTION_START =  com.neon.messenger.service.START"

@@ -22,7 +22,7 @@ enum class ThemePreference {
  * Avoids adding DataStore dependency for now.
  */
 object ThemePreferenceManager {
-    private const val PREFS_NAME = "bitchat_settings"
+    private const val PREFS_NAME = "neon_settings"
     private const val KEY_THEME = "theme_preference"
 
     private val _themeFlow = MutableStateFlow(ThemePreference.System)

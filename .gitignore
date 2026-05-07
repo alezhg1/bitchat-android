@@ -1,83 +1,56 @@
 ```
-# Android build artifacts
-*.apk
-*.aar
-*.dex
-*.so
+# Compiled and build artifacts
+*.class
+*.o
+*.obj
+*.out
+*.pyc
+__pycache__/
 
-# Android build directories
-build/
-.externalNativeBuild/
-.intermediates/
-.packaged-classes/
-
-# Gradle
+# Dependencies
+node_modules/
+venv/
+.venv/
 .gradle/
-!gradle.properties
-!gradlew
-!gradlew.bat
+target/
 
-# Local configuration file (sdk path, etc)
-local.properties
+# Build directories (common in Android/Java projects)
+build/
+dist/
 
-# Android Studio Navigation editor temp files
-.navigation/
-
-# Android Studio captures folder
-captures/
-
-# IntelliJ IDEA artifacts
-*.iml
-*.iws
+# IDE specific
+.vscode/
 .idea/
-
-# Kotlin
-*.kotlin_metadata
-*.kotlin_built
+*.swp
+*.swo
+*.tmp
 
 # Logs
 *.log
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-*.swp
 
 # Environment variables
 .env
 .env.local
 *.env.*
 
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
-*.coverage
+.coverage
 
-# Compressed archives
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Android specific
+*.apk
+*.aar
+local.properties
+
+# Temporary files
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+
+# MyPy cache
+.mypy_cache/
+# Pytest cache
+.pytest_cache/
 ```
