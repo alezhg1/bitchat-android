@@ -421,7 +421,7 @@ class PeerManager {
     private fun startPeriodicCleanup() {
         managerScope.launch {
             while (isActive) {
-                delay com.neon.messenger.util.AppConstants.Mesh.PEER_CLEANUP_INTERVAL_MS)
+                delay(com.neon.messenger.util.AppConstants.Mesh.PEER_CLEANUP_INTERVAL_MS)
                 cleanupStalePeers()
             }
         }
