@@ -151,6 +151,6 @@ dependencies {
     androidTestImplementation(libs.bundles.compose.testing)
     debugImplementation(libs.androidx.compose.ui.tooling)
     
-    // Noise encryption library
-    implementation("com.github.southernstorm:noise-java:1.0.0")
+    // Noise encryption library - fork of southernstorm/noise-java
+    implementation("com.github.auties00:noise-java:1.2")
 }
