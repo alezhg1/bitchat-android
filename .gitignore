@@ -1,41 +1,40 @@
 ```
-# Build artifacts
-build/
-*.jar
-*.war
+# Compiled and build artifacts
 *.class
-*.aar
-
-# Gradle
-.gradle/
-!gradle/wrapper/gradle-wrapper.jar
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+*.out
 
 # Dependencies
-libs/
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+*.swo
 
 # Environment
 .env
 .env.local
-*.env*
+*.env.*
 
-# IDE
-.idea/
-*.iml
-*.ipr
-*.iws
+# Editors
 .vscode/
-*.swp
-*.swo
+.idea/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
+# Build directories
+build/
+dist/
 ```

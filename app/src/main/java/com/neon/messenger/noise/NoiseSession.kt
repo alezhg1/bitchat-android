@@ -1,7 +1,7 @@
 package com.neon.messenger.noise
 
 import android.util.Log
-import com.neon.messenger.noise.southernstorm.protocol.*
+import com.neon.messenger.noise.auties00.protocol.*
 import com.neon.messenger.util.toHexString
 import java.security.SecureRandom
 
