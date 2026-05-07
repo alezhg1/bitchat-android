@@ -4,53 +4,24 @@
 *.o
 *.obj
 *.out
-*.pyc
-__pycache__/
-
-# Dependencies
-node_modules/
-venv/
-.venv/
-.gradle/
+build/
 target/
 
-# Build directories (common in Android/Java projects)
-build/
-dist/
+# Dependencies
+.gradle/
+libs/
 
-# IDE specific
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
 
-# Environment variables
+# Editors
+.idea/
+.vscode/
+
+# Environment
 .env
 .env.local
 *.env.*
-
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# Android specific
-*.apk
-*.aar
-local.properties
-
-# Temporary files
-*.tmp
-*~
-.DS_Store
-Thumbs.db
-
-# MyPy cache
-.mypy_cache/
-# Pytest cache
-.pytest_cache/
 ```

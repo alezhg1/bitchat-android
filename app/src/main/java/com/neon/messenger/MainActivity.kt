@@ -78,7 +78,7 @@ class MainActivity : OrientationAwareActivity() {
         super.onCreate(savedInstanceState)
         
         // Register receiver for force finish signal from shutdown coordinator
-        val filter = android.content.IntentFilter com.neon.messenger.util.AppConstants.UI.ACTION_FORCE_FINISH)
+        val filter = android.content.IntentFilter(com.neon.messenger.util.AppConstants.UI.ACTION_FORCE_FINISH)
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             registerReceiver(
                 forceFinishReceiver,
@@ -768,8 +768,8 @@ class MainActivity : OrientationAwareActivity() {
         
         when {
             shouldOpenPrivateChat -> {
-                val peerID = intent.getStringExtra com.neon.messenger.ui.NotificationManager.EXTRA_PEER_ID)
-                val senderNickname = intent.getStringExtra com.neon.messenger.ui.NotificationManager.EXTRA_SENDER_NICKNAME)
+                val peerID = intent.getStringExtra(com.neon.messenger.ui.NotificationManager.EXTRA_PEER_ID)
+                val senderNickname = intent.getStringExtra(com.neon.messenger.ui.NotificationManager.EXTRA_SENDER_NICKNAME)
                 
                 if (peerID != null) {
                     Log.d("MainActivity", "Opening private chat with $senderNickname (peerID: $peerID) from notification")
@@ -784,7 +784,7 @@ class MainActivity : OrientationAwareActivity() {
             }
             
             shouldOpenGeohashChat -> {
-                val geohash = intent.getStringExtra com.neon.messenger.ui.NotificationManager.EXTRA_GEOHASH)
+                val geohash = intent.getStringExtra(com.neon.messenger.ui.NotificationManager.EXTRA_GEOHASH)
                 
                 if (geohash != null) {
                     Log.d("MainActivity", "Opening geohash chat #$geohash from notification")
