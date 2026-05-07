@@ -150,12 +150,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.bundles.compose.testing)
     debugImplementation(libs.androidx.compose.ui.tooling)
-}
-
-repositories {
-    maven { url = uri("https://jitpack.io") }
-}
-
-dependencies {
+    
+    // Noise encryption library
     implementation("com.github.southernstorm:noise-java:1.0.0")
 }
