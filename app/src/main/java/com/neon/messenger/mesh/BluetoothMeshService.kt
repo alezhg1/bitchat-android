@@ -923,7 +923,7 @@ class BluetoothMeshService(private val context: Context) {
                 map.containsKey(recipientPeerID)
             } catch (_: Exception) { false }
             if (isGeoAlias && geo != null) {
-                geo.sendReadReceipt com.neon.messenger.model.ReadReceipt(messageID), recipientPeerID)
+                geo.sendReadReceipt(com.neon.messenger.model.ReadReceipt(messageID), recipientPeerID)
                 return@launch
             }
 
