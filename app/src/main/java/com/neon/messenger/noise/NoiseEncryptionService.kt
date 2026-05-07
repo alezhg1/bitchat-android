@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.neon.messenger.identity.SecureIdentityStateManager
 import com.neon.messenger.mesh.PeerFingerprintManager
-import com.neon.messenger.noise.auties00.protocol.Noise
+import noise.protocol.Noise
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
@@ -356,7 +356,7 @@ class NoiseEncryptionService(private val context: Context) {
      */
     private fun generateKeyPair(): Pair<ByteArray, ByteArray> {
         try {
-            val dhState = com.neon.messenger.noise.auties00.protocol.Noise.createDH("25519")
+            val dhState = Noise.createDH("25519")
             dhState.generateKeyPair()
             
             val privateKey = ByteArray(32)
