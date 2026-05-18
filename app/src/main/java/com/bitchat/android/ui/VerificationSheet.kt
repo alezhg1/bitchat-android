@@ -99,6 +99,7 @@ import com.bitchat.android.R
 import com.bitchat.android.core.ui.component.button.CloseButton
 import com.bitchat.android.core.ui.component.sheet.BitchatBottomSheet
 import com.bitchat.android.services.VerificationService
+import com.bitchat.android.ui.theme.Typography
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -115,6 +116,12 @@ import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+// NeoN Purple color palette
+private val PurplePrimary = Color(0xFF8A2BE2)
+private val PurpleSecondary = Color(0xFF9D4EDD)
+private val OrangeAccent = Color(0xFFFFA500)
+private val GoldYellow = Color(0xFFFFD700)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VerificationSheet(
@@ -126,10 +133,10 @@ fun VerificationSheet(
     if (!isPresented) return
 
     val isDark = isSystemInDarkTheme()
-    val accent = if (isDark) Color.Green else Color(0xFF008000)
+    val accent = PurplePrimary
     val gradientColors = listOf(
-        accent.copy(alpha = 0.1f),
-        accent.copy(alpha = 0.05f),
+        PurplePrimary.copy(alpha = 0.15f),
+        PurpleSecondary.copy(alpha = 0.08f),
         Color.Transparent
     )
     
@@ -154,7 +161,7 @@ fun VerificationSheet(
             VerificationHeader(
                 accent = accent,
                 onClose = onDismiss,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
             )
 
             // Tabs with modern design
@@ -165,7 +172,8 @@ fun VerificationSheet(
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = accent
+                        color = accent,
+                        height = 3.dp
                     )
                 },
                 divider = { }
@@ -187,6 +195,8 @@ fun VerificationSheet(
                             Text(
                                 text = "My QR",
                                 fontSize = 14.sp,
+                                fontFamily = Typography.bodyMedium.fontFamily,
+                                fontWeight = Typography.bodyMedium.fontWeight,
                                 color = if (selectedTab == 0) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         }
@@ -209,6 +219,8 @@ fun VerificationSheet(
                             Text(
                                 text = "Scan",
                                 fontSize = 14.sp,
+                                fontFamily = Typography.bodyMedium.fontFamily,
+                                fontWeight = Typography.bodyMedium.fontWeight,
                                 color = if (selectedTab == 1) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         }
@@ -216,7 +228,7 @@ fun VerificationSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Content area - no nested Surface, direct content
             Crossfade(
@@ -261,11 +273,13 @@ fun VerificationSheet(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = 20.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.verify_remove),
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            fontFamily = Typography.bodySmall.fontFamily,
+                            fontWeight = Typography.bodySmall.fontWeight
                         )
                     }
                 }
@@ -288,6 +302,8 @@ private fun VerificationHeader(
         Text(
             text = stringResource(R.string.verify_title).uppercase(),
             fontSize = 14.sp,
+            fontFamily = Typography.labelMedium.fontFamily,
+            fontWeight = Typography.labelMedium.fontWeight,
             color = accent
         )
         CloseButton(onClick = onClose)
@@ -308,15 +324,15 @@ private fun MyQrTabContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        
         // Title with subtitle
         Text(
             text = stringResource(R.string.verify_my_qr_title),
-            style = MaterialTheme.typography.titleMedium,
+            fontSize = 18.sp,
+            fontFamily = Typography.headlineSmall.fontFamily,
+            fontWeight = Typography.headlineSmall.fontWeight,
             color = accent
         )
         
@@ -324,25 +340,27 @@ private fun MyQrTabContent(
         
         Text(
             text = "Share your identity securely",
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 13.sp,
+            fontFamily = Typography.bodySmall.fontFamily,
+            fontWeight = Typography.bodySmall.fontWeight,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // QR Code Card with gradient border effect
         if (qrString.isNotBlank()) {
             Card(
                 modifier = Modifier
-                    .size(280.dp)
+                    .size(260.dp)
                     .shadow(
-                        elevation = 12.dp,
-                        shape = RoundedCornerShape(20.dp),
-                        ambientColor = accent.copy(alpha = 0.2f),
-                        spotColor = accent.copy(alpha = 0.2f)
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        ambientColor = accent.copy(alpha = 0.15f),
+                        spotColor = accent.copy(alpha = 0.15f)
                     ),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -353,22 +371,22 @@ private fun MyQrTabContent(
                         .background(
                             Brush.verticalGradient(gradientColors)
                         )
-                        .padding(16.dp),
+                        .padding(14.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     // Inner white card for QR code
                     Card(
                         modifier = Modifier.fillMaxSize(),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(16.dp),
+                                .padding(14.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            QRCodeImage(data = qrString, size = 200.dp)
+                            QRCodeImage(data = qrString, size = 180.dp)
                         }
                     }
                 }
@@ -406,13 +424,15 @@ private fun MyQrTabContent(
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = null,
-                            tint = accent,
+                            tint = GoldYellow,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Copied",
                             fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight,
                             color = accent
                         )
                     }
@@ -429,7 +449,9 @@ private fun MyQrTabContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Copy",
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight
                         )
                     }
                 }
@@ -455,14 +477,16 @@ private fun MyQrTabContent(
                     Text(
                         text = "Share",
                         fontSize = 12.sp,
+                        fontFamily = Typography.labelMedium.fontFamily,
+                        fontWeight = Typography.labelMedium.fontWeight,
                         color = Color.White
                     )
                 }
             }
         } else {
             Card(
-                modifier = Modifier.size(280.dp),
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.size(260.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
@@ -484,6 +508,8 @@ private fun MyQrTabContent(
                         Text(
                             text = stringResource(R.string.verify_qr_unavailable),
                             fontSize = 12.sp,
+                            fontFamily = Typography.bodySmall.fontFamily,
+                            fontWeight = Typography.bodySmall.fontWeight,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
@@ -491,16 +517,16 @@ private fun MyQrTabContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // User Nickname Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
-                containerColor = accent.copy(alpha = 0.1f)
+                containerColor = accent.copy(alpha = 0.08f)
             ),
-            border = BorderStroke(1.dp, accent.copy(alpha = 0.3f))
+            border = BorderStroke(1.dp, accent.copy(alpha = 0.2f))
         ) {
             Column(
                 modifier = Modifier
@@ -510,7 +536,9 @@ private fun MyQrTabContent(
             ) {
                 Text(
                     text = nickname,
-                    style = MaterialTheme.typography.headlineSmall,
+                    fontSize = 17.sp,
+                    fontFamily = Typography.headlineSmall.fontFamily,
+                    fontWeight = Typography.headlineSmall.fontWeight,
                     color = accent,
                     textAlign = TextAlign.Center
                 )
@@ -520,7 +548,9 @@ private fun MyQrTabContent(
                 // Helper text
                 Text(
                     text = stringResource(R.string.app_name).lowercase(),
-                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
+                    fontFamily = Typography.bodySmall.fontFamily,
+                    fontWeight = Typography.bodySmall.fontWeight,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center
                 )
@@ -532,10 +562,12 @@ private fun MyQrTabContent(
         // Info text
         Text(
             text = "Scan this QR code to verify identity and connect securely",
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 12.sp,
+            fontFamily = Typography.bodySmall.fontFamily,
+            fontWeight = Typography.bodySmall.fontWeight,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 12.dp)
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -586,27 +618,27 @@ private fun ScanTabContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        
         // Header text for scanner
         Text(
             text = "Point camera at a QR code to verify",
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 14.sp,
+            fontFamily = Typography.bodyMedium.fontFamily,
+            fontWeight = Typography.bodyMedium.fontWeight,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         
         if (permissionState.status.isGranted) {
             Card(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Black),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
@@ -619,49 +651,49 @@ private fun ScanTabContent(
                     // Scanning overlay with corner accents
                     Box(
                         modifier = Modifier
-                            .size(260.dp)
+                            .size(240.dp)
                             .border(
                                 BorderStroke(2.dp, accent.copy(alpha = 0.8f)),
-                                RoundedCornerShape(16.dp)
+                                RoundedCornerShape(14.dp)
                             )
                     )
                     
                     // Corner decorations
-                    Box(modifier = Modifier.size(260.dp)) {
+                    Box(modifier = Modifier.size(240.dp)) {
                         // Top-left corner
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .offset(x = (-8).dp, y = (-8).dp)
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(topStart = 16.dp))
+                                .offset(x = (-6).dp, y = (-6).dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(topStart = 14.dp))
                                 .background(accent.copy(alpha = 0.6f))
                         )
                         // Top-right corner
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .offset(x = 8.dp, y = (-8).dp)
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(topEnd = 16.dp))
+                                .offset(x = 6.dp, y = (-6).dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(topEnd = 14.dp))
                                 .background(accent.copy(alpha = 0.6f))
                         )
                         // Bottom-left corner
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .offset(x = (-8).dp, y = 8.dp)
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(bottomStart = 16.dp))
+                                .offset(x = (-6).dp, y = 6.dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(bottomStart = 14.dp))
                                 .background(accent.copy(alpha = 0.6f))
                         )
                         // Bottom-right corner
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .offset(x = 8.dp, y = 8.dp)
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(bottomEnd = 16.dp))
+                                .offset(x = 6.dp, y = 6.dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(bottomEnd = 14.dp))
                                 .background(accent.copy(alpha = 0.6f))
                         )
                     }
@@ -688,8 +720,10 @@ private fun ScanTabContent(
                             )
                             Text(
                                 text = stringResource(R.string.verify_scan_prompt_friend),
-                                color = Color.White,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                fontFamily = Typography.labelSmall.fontFamily,
+                                fontWeight = Typography.labelSmall.fontWeight,
+                                color = Color.White
                             )
                         }
                     }
@@ -700,7 +734,7 @@ private fun ScanTabContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 )
@@ -730,8 +764,10 @@ private fun ScanTabContent(
                     Text(
                         text = stringResource(R.string.verify_camera_permission),
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium
+                        fontSize = 14.sp,
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
@@ -749,6 +785,9 @@ private fun ScanTabContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.verify_request_camera),
+                            fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight,
                             color = Color.White
                         )
                     }
