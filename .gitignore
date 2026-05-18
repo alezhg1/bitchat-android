@@ -1,1 +1,54 @@
-Nothing should be ignored since only a Kotlin source file was modified and no build artifacts, dependencies, or temporary files were included in the changes.
+```
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aar
+*.ap_
+build/
+*/build/
+app/build/
+
+# Kotlin
+*.kotlin_metadata
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Temp files
+*.tmp
+*.swp
+*.swo
+
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+```

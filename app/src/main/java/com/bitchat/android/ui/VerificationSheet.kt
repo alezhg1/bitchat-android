@@ -1,5 +1,9 @@
 package com.bitchat.android.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -13,11 +17,17 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,18 +36,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -55,17 +77,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -74,6 +98,7 @@ import com.bitchat.android.R
 import com.bitchat.android.core.ui.component.button.CloseButton
 import com.bitchat.android.core.ui.component.sheet.BitchatBottomSheet
 import com.bitchat.android.services.VerificationService
+import com.bitchat.android.ui.theme.Typography
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -85,8 +110,16 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.common.BitMatrix
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
+// NeoN Purple color palette
+private val PurplePrimary = Color(0xFF8A2BE2)
+private val PurpleSecondary = Color(0xFF9D4EDD)
+private val OrangeAccent = Color(0xFFFFA500)
+private val GoldYellow = Color(0xFFFFD700)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,8 +131,12 @@ fun VerificationSheet(
 ) {
     if (!isPresented) return
 
-    val isDark = isSystemInDarkTheme()
-    val accent = if (isDark) Color.Green else Color(0xFF008000)
+    val accent = PurplePrimary
+    val gradientColors = listOf(
+        PurplePrimary.copy(alpha = 0.15f),
+        PurpleSecondary.copy(alpha = 0.08f),
+        Color.Transparent
+    )
     
     var selectedTab by remember { mutableStateOf(0) } // 0 = My Code, 1 = Scan
     val nickname by viewModel.nickname.collectAsStateWithLifecycle()
@@ -116,17 +153,16 @@ fun VerificationSheet(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.Top
+                .padding(bottom = 16.dp)
         ) {
             // Header
             VerificationHeader(
                 accent = accent,
                 onClose = onDismiss,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
             )
 
-            // Tabs
+            // Tabs with modern design
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.Transparent,
@@ -134,47 +170,78 @@ fun VerificationSheet(
                 indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = accent
+                        color = accent,
+                        height = 3.dp
                     )
-                }
+                },
+                divider = { }
             ) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     text = {
-                        Text(
-                            text = "My QR",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCode,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (selectedTab == 0) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                text = "My QR",
+                                fontSize = 14.sp,
+                                fontFamily = Typography.bodyMedium.fontFamily,
+                                fontWeight = Typography.bodyMedium.fontWeight,
+                                color = if (selectedTab == 0) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
                     }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     text = {
-                        Text(
-                            text = "Scan",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.QrCodeScanner,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (selectedTab == 1) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                text = "Scan",
+                                fontSize = 14.sp,
+                                fontFamily = Typography.bodyMedium.fontFamily,
+                                fontWeight = Typography.bodyMedium.fontWeight,
+                                color = if (selectedTab == 1) accent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
                     }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Content
+            // Content area - no nested Surface, direct content
             Crossfade(
                 targetState = selectedTab, 
                 label = "VerificationTabCrossfade",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) { tab ->
                 when (tab) {
                     0 -> MyQrTabContent(
                         qrString = qrString,
                         nickname = nickname,
-                        accent = accent
+                        accent = accent,
+                        gradientColors = gradientColors
                     )
                     1 -> ScanTabContent(
                         accent = accent,
@@ -204,12 +271,13 @@ fun VerificationSheet(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = 20.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.verify_remove),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            fontFamily = Typography.bodySmall.fontFamily,
+                            fontWeight = Typography.bodySmall.fontWeight
                         )
                     }
                 }
@@ -232,7 +300,8 @@ private fun VerificationHeader(
         Text(
             text = stringResource(R.string.verify_title).uppercase(),
             fontSize = 14.sp,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = Typography.labelMedium.fontFamily,
+            fontWeight = Typography.labelMedium.fontWeight,
             color = accent
         )
         CloseButton(onClick = onClose)
@@ -243,75 +312,297 @@ private fun VerificationHeader(
 private fun MyQrTabContent(
     qrString: String,
     nickname: String,
-    accent: Color
+    accent: Color,
+    gradientColors: List<Color>
 ) {
+    val context = LocalContext.current
+    var showCopiedFeedback by remember { mutableStateOf(false) }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        
+        // Title with subtitle
         Text(
             text = stringResource(R.string.verify_my_qr_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = FontFamily.Monospace,
+            fontSize = 18.sp,
+            fontFamily = Typography.headlineSmall.fontFamily,
+            fontWeight = Typography.headlineSmall.fontWeight,
             color = accent
         )
         
-        Spacer(modifier = Modifier.height(32.dp))
-
-        if (qrString.isNotBlank()) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
-                    .padding(20.dp) // Quiet zone
-            ) {
-                QRCodeImage(data = qrString, size = 260.dp)
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(260.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.verify_qr_unavailable),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    color = Color.Black.copy(alpha = 0.6f)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // User Nickname
-        Text(
-            text = nickname,
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
+        Spacer(modifier = Modifier.height(4.dp))
         
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        // Helper text
         Text(
-            text = stringResource(R.string.app_name).lowercase(),
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = FontFamily.Monospace,
+            text = "Share your identity securely",
+            fontSize = 13.sp,
+            fontFamily = Typography.bodySmall.fontFamily,
+            fontWeight = Typography.bodySmall.fontWeight,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             textAlign = TextAlign.Center
         )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // QR Code Card with gradient border effect
+        if (qrString.isNotBlank()) {
+            Card(
+                modifier = Modifier
+                    .size(260.dp)
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        ambientColor = accent.copy(alpha = 0.15f),
+                        spotColor = accent.copy(alpha = 0.15f)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(gradientColors)
+                        )
+                        .padding(14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Inner white card for QR code
+                    Card(
+                        modifier = Modifier.fillMaxSize(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            QRCodeImage(data = qrString, size = 180.dp)
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Action buttons row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Copy button
+                Button(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("QR Code Data", qrString)
+                        clipboard.setPrimaryClip(clip)
+                        showCopiedFeedback = true
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            showCopiedFeedback = false
+                        }, 2000)
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    AnimatedVisibility(
+                        visible = showCopiedFeedback,
+                        enter = fadeIn() + scaleIn(),
+                        exit = fadeOut() + scaleOut()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = GoldYellow,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Copied",
+                            fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight,
+                            color = accent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = !showCopiedFeedback,
+                        enter = fadeIn() + scaleIn(),
+                        exit = fadeOut() + scaleOut()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ContentCopy,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Copy",
+                            fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight
+                        )
+                    }
+                }
+                
+                // Share button
+                Button(
+                    onClick = {
+                        shareQRCode(context, qrString, nickname)
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = accent
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Share,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Share",
+                        fontSize = 12.sp,
+                        fontFamily = Typography.labelMedium.fontFamily,
+                        fontWeight = Typography.labelMedium.fontWeight,
+                        color = Color.White
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier.size(260.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = accent,
+                            strokeWidth = 3.dp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.verify_qr_unavailable),
+                            fontSize = 12.sp,
+                            fontFamily = Typography.bodySmall.fontFamily,
+                            fontWeight = Typography.bodySmall.fontWeight,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // User Nickname Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = accent.copy(alpha = 0.08f)
+            ),
+            border = BorderStroke(1.dp, accent.copy(alpha = 0.2f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = nickname,
+                    fontSize = 17.sp,
+                    fontFamily = Typography.headlineSmall.fontFamily,
+                    fontWeight = Typography.headlineSmall.fontWeight,
+                    color = accent,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // Helper text
+                Text(
+                    text = stringResource(R.string.app_name).lowercase(),
+                    fontSize = 12.sp,
+                    fontFamily = Typography.bodySmall.fontFamily,
+                    fontWeight = Typography.bodySmall.fontWeight,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Info text
+        Text(
+            text = "Scan this QR code to verify identity and connect securely",
+            fontSize = 12.sp,
+            fontFamily = Typography.bodySmall.fontFamily,
+            fontWeight = Typography.bodySmall.fontWeight,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+private fun shareQRCode(context: Context, qrData: String, nickname: String) {
+    try {
+        val bitmap = generateQrBitmap(qrData, 512)
+        if (bitmap != null) {
+            val file = File(context.cacheDir, "qrcode_${System.currentTimeMillis()}.png")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                file
+            )
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "My ${stringResource(context, R.string.app_name)} Profile")
+                putExtra(Intent.EXTRA_TEXT, "Connect with me on ${stringResource(context, R.string.app_name)}!\nNickname: $nickname")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Share QR Code"))
+        }
+    } catch (e: Exception) {
+        Log.e("VerificationSheet", "Failed to share QR code: ${e.message}")
+    }
+}
+
+private fun stringResource(context: Context, resId: Int): String {
+    return context.getString(resId)
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -325,80 +616,179 @@ private fun ScanTabContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Header text for scanner
+        Text(
+            text = "Point camera at a QR code to verify",
+            fontSize = 14.sp,
+            fontFamily = Typography.bodyMedium.fontFamily,
+            fontWeight = Typography.bodyMedium.fontWeight,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(20.dp))
+        
         if (permissionState.status.isGranted) {
-            Box(
+            Card(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.Black),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Black),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                ScannerView(onScan = onScan)
-                
-                // Overlay border
                 Box(
-                    modifier = Modifier
-                        .size(280.dp)
-                        .border(2.dp, accent.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                )
-                
-                // Corner accents for the overlay
-                Box(modifier = Modifier.size(260.dp)) {
-                    // This could be drawn with Canvas for cooler effect, but simple border is cleaner for now
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ScannerView(onScan = onScan)
+                    
+                    // Scanning overlay with corner accents
+                    Box(
+                        modifier = Modifier
+                            .size(240.dp)
+                            .border(
+                                BorderStroke(2.dp, accent.copy(alpha = 0.8f)),
+                                RoundedCornerShape(14.dp)
+                            )
+                    )
+                    
+                    // Corner decorations
+                    Box(modifier = Modifier.size(240.dp)) {
+                        // Top-left corner
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset(x = (-6).dp, y = (-6).dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(topStart = 14.dp))
+                                .background(accent.copy(alpha = 0.6f))
+                        )
+                        // Top-right corner
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 6.dp, y = (-6).dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(topEnd = 14.dp))
+                                .background(accent.copy(alpha = 0.6f))
+                        )
+                        // Bottom-left corner
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .offset(x = (-6).dp, y = 6.dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(bottomStart = 14.dp))
+                                .background(accent.copy(alpha = 0.6f))
+                        )
+                        // Bottom-right corner
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(x = 6.dp, y = 6.dp)
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(bottomEnd = 14.dp))
+                                .background(accent.copy(alpha = 0.6f))
+                        )
+                    }
+                    
+                    // Instruction badge
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 32.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shadowElevation = 8.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.QrCodeScanner,
+                                contentDescription = null,
+                                tint = accent,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.verify_scan_prompt_friend),
+                                fontSize = 12.sp,
+                                fontFamily = Typography.labelSmall.fontFamily,
+                                fontWeight = Typography.labelSmall.fontWeight,
+                                color = Color.White
+                            )
+                        }
+                    }
                 }
-                
-                Text(
-                    text = stringResource(R.string.verify_scan_prompt_friend),
-                    color = Color.White,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                )
             }
         } else {
-            Column(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        RoundedCornerShape(24.dp)
-                    )
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.QrCodeScanner,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = accent
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = stringResource(R.string.verify_camera_permission),
-                    fontFamily = FontFamily.Monospace,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(
-                    onClick = { permissionState.launchPermissionRequest() },
-                    colors = ButtonDefaults.buttonColors(containerColor = accent)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = accent.copy(alpha = 0.1f),
+                        modifier = Modifier.size(80.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.QrCodeScanner,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = accent
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = stringResource(R.string.verify_request_camera),
-                        fontFamily = FontFamily.Monospace
+                        text = stringResource(R.string.verify_camera_permission),
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = { permissionState.launchPermissionRequest() },
+                        colors = ButtonDefaults.buttonColors(containerColor = accent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.verify_request_camera),
+                            fontSize = 12.sp,
+                            fontFamily = Typography.labelMedium.fontFamily,
+                            fontWeight = Typography.labelMedium.fontWeight,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

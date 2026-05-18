@@ -3,7 +3,6 @@ package com.bitchat.android.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -50,10 +49,9 @@ fun LocationNotesSheet(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isDark = isSystemInDarkTheme()
     
-    // iOS color scheme
-    val accentGreen = if (isDark) Color.Green else Color(0xFF008000) // dark: green, light: dark green (0, 0.5, 0)
+    // iOS color scheme - light theme only (green accent)
+    val accentGreen = Color(0xFF008000) // dark green (0, 0.5, 0)
     
     // Managers
     val notesManager = remember { LocationNotesManager.getInstance() }

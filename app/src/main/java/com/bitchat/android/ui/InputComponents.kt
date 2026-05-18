@@ -332,10 +332,9 @@ fun MessageInput(
                             } else if (selectedPrivatePeer != null || currentChannel != null) {
                                 // Orange for both private messages and channels when enabled
                                 Color(0xFFFF9500).copy(alpha = 0.75f)
-                            } else if (colorScheme.background == Color.Black) {
-                                Color(0xFF00FF00).copy(alpha = 0.75f) // Bright green for dark theme
                             } else {
-                                Color(0xFF008000).copy(alpha = 0.75f) // Dark green for light theme
+                                // Purple accent for NLOON theme
+                                Color(0xFF8A2BE2).copy(alpha = 0.75f)
                             },
                             shape = CircleShape
                         ),
@@ -351,10 +350,9 @@ fun MessageInput(
                         } else if (selectedPrivatePeer != null || currentChannel != null) {
                             // Black arrow on orange for both private and channel modes
                             Color.Black
-                        } else if (colorScheme.background == Color.Black) {
-                            Color.Black // Black arrow on bright green in dark theme
                         } else {
-                            Color.White // White arrow on dark green in light theme
+                            // White arrow on purple for NLOON theme
+                            Color.White
                         }
                     )
                 }
