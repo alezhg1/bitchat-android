@@ -661,7 +661,7 @@ private fun PeerItem(
                     imageVector = Icons.Filled.Verified,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
-                    tint = Color(0xFF32D74B) // iOS Green
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -967,7 +967,7 @@ fun PrivateChatSheet(
                                         imageVector = Icons.Filled.Verified,
                                         contentDescription = stringResource(R.string.verify_title),
                                         modifier = Modifier.size(14.dp),
-                                        tint = Color(0xFF32D74B) // iOS Green
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }

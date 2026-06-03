@@ -45,8 +45,7 @@ fun LinkPreviewPill(
     val colorScheme = MaterialTheme.colorScheme
     val isDark = colorScheme.background.red + colorScheme.background.green + colorScheme.background.blue < 1.5f
     
-    // iOS-style colors
-    val textColor = if (isDark) Color.Green else Color(red = 0f, green = 0.5f, blue = 0f)
+    val textColor = colorScheme.primary
     val backgroundColor = if (isDark) Color.Gray.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.08f)
     val borderColor = textColor.copy(alpha = 0.3f)
     
@@ -87,7 +86,7 @@ fun LinkPreviewPill(
             Surface(
                 modifier = Modifier.size(60.dp),
                 shape = RoundedCornerShape(8.dp),
-                color = Color.Blue.copy(alpha = 0.1f)
+                color = colorScheme.secondary.copy(alpha = 0.14f)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -97,7 +96,7 @@ fun LinkPreviewPill(
                         imageVector = Icons.Outlined.Link,
                         contentDescription = stringResource(com.bitchat.android.R.string.cd_link),
                         modifier = Modifier.size(24.dp),
-                        tint = Color.Blue
+                        tint = colorScheme.primary
                     )
                 }
             }

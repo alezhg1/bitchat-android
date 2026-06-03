@@ -27,11 +27,11 @@ import java.util.*
  */
 fun getRSSIColor(rssi: Int): Color {
     return when {
-        rssi >= -50 -> Color(0xFF00FF00) // Bright green
-        rssi >= -60 -> Color(0xFF80FF00) // Green-yellow
-        rssi >= -70 -> Color(0xFFFFFF00) // Yellow
-        rssi >= -80 -> Color(0xFFFF8000) // Orange
-        else -> Color(0xFFFF4444) // Red
+        rssi >= -50 -> Color(0xFF8A2BE2) // NeoN purple
+        rssi >= -60 -> Color(0xFF9D4EDD) // softer purple
+        rssi >= -70 -> Color(0xFFFFA500) // peach
+        rssi >= -80 -> Color(0xFFFFC107) // warm gold
+        else -> Color(0xFFF44336) // red
     }
 }
 
@@ -491,9 +491,9 @@ private fun appendIOSFormattedContent(
             }
             else -> {
                 if (type == "geohash") {
-                    // Style geohash in blue, underlined, and add click annotation
+                    // Style geohash in NeoN purple, underlined, and add click annotation
                     builder.pushStyle(SpanStyle(
-                        color = Color(0xFF007AFF),
+                        color = Color(0xFF9D4EDD),
                         fontSize = BASE_FONT_SIZE.sp,
                         fontWeight = if (isSelf) FontWeight.Bold else FontWeight.SemiBold,
                         textDecoration = TextDecoration.Underline
@@ -510,9 +510,9 @@ private fun appendIOSFormattedContent(
                     )
                     builder.pop()
                 } else if (type == "url") {
-                    // Style URL in blue, underlined, and add click annotation with the raw text
+                    // Style URL in NeoN purple, underlined, and add click annotation with the raw text
                     builder.pushStyle(SpanStyle(
-                        color = Color(0xFF007AFF),
+                        color = Color(0xFF9D4EDD),
                         fontSize = BASE_FONT_SIZE.sp,
                         fontWeight = if (isSelf) FontWeight.Bold else FontWeight.SemiBold,
                         textDecoration = TextDecoration.Underline

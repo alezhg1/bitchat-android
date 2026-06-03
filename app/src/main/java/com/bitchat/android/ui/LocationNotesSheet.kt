@@ -36,8 +36,8 @@ import java.util.*
 import java.util.Calendar
 
 /**
- * Location Notes Sheet - EXACT iOS UI match for bitchat
- * Matches iOS LocationNotesView.swift exactly in style, colors, fonts, and text
+ * Location Notes Sheet - NeoN location notes experience
+ * Uses the NeoN purple/peach theme and a more modern, airy layout.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +50,8 @@ fun LocationNotesSheet(
 ) {
     val context = LocalContext.current
     
-    // iOS color scheme - light theme only (green accent)
-    val accentGreen = Color(0xFF008000) // dark green (0, 0.5, 0)
+    // NeoN accent color
+    val accentColor = MaterialTheme.colorScheme.primary
     
     // Managers
     val notesManager = remember { LocationNotesManager.getInstance() }
@@ -118,7 +118,7 @@ fun LocationNotesSheet(
                     LocationNotesHeader(
                         locationName = displayLocationName,
                         state = state,
-                        accentGreen = accentGreen,
+                        accentColor = accentColor,
                     )
                 }
 
@@ -199,7 +199,7 @@ fun LocationNotesSheet(
                         draft = draft,
                         onDraftChange = { draft = it },
                         sendButtonEnabled = sendButtonEnabled,
-                        accentGreen = accentGreen,
+                        accentColor = accentColor,
                         onSend = {
                             val content = draft.trim()
                             if (content.isNotEmpty()) {
@@ -222,7 +222,7 @@ fun LocationNotesSheet(
 private fun LocationNotesHeader(
     locationName: String?,
     state: LocationNotesManager.State,
-    accentGreen: Color,
+    accentColor: Color,
 ) {
     Column(
         modifier = Modifier
@@ -237,7 +237,7 @@ private fun LocationNotesHeader(
                     text = name,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 12.sp,
-                    color = accentGreen
+                    color = accentColor
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -448,7 +448,7 @@ private fun LocationNotesInputSection(
     draft: String,
     onDraftChange: (String) -> Unit,
     sendButtonEnabled: Boolean,
-    accentGreen: Color,
+    accentColor: Color,
     onSend: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
@@ -509,7 +509,7 @@ private fun LocationNotesInputSection(
                         color = if (!sendButtonEnabled) {
                             colorScheme.onSurface.copy(alpha = 0.3f)
                         } else {
-                            accentGreen.copy(alpha = 0.75f)
+                            accentColor.copy(alpha = 0.75f)
                         },
                         shape = CircleShape
                     ),
@@ -521,10 +521,8 @@ private fun LocationNotesInputSection(
                     modifier = Modifier.size(20.dp),
                     tint = if (!sendButtonEnabled) {
                         colorScheme.onSurface.copy(alpha = 0.5f)
-                    } else if (isDark) {
-                        Color.Black // Black arrow on green in dark theme
                     } else {
-                        Color.White // White arrow on green in light theme
+                        Color.White
                     }
                 )
             }

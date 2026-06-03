@@ -187,7 +187,7 @@ fun DebugSettingsSheet(
                 Surface(shape = RoundedCornerShape(12.dp), color = colorScheme.surfaceVariant.copy(alpha = 0.2f)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.SettingsEthernet, contentDescription = null, tint = Color(0xFF00C851))
+                            Icon(Icons.Filled.SettingsEthernet, contentDescription = null, tint = colorScheme.primary)
                             Text(stringResource(R.string.debug_verbose_logging), fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                             Spacer(Modifier.weight(1f))
                             Switch(checked = verboseLogging, onCheckedChange = { manager.setVerboseLoggingEnabled(it) })
@@ -212,7 +212,7 @@ fun DebugSettingsSheet(
                 Surface(shape = RoundedCornerShape(12.dp), color = colorScheme.surfaceVariant.copy(alpha = 0.2f)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = Color(0xFF007AFF))
+                            Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = colorScheme.secondary)
                             Text(stringResource(R.string.debug_bluetooth_roles), fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -348,7 +348,7 @@ fun DebugSettingsSheet(
                             // Color palette for stacked legend
                             val palette = remember {
                                 listOf(
-                                    Color(0xFF00C851), Color(0xFF007AFF), Color(0xFFFF9500), Color(0xFFFF3B30),
+                                    colorScheme.primary, colorScheme.secondary, Color(0xFFFF9500), Color(0xFFFF3B30),
                                     Color(0xFF5AC8FA), Color(0xFFAF52DE), Color(0xFFFF2D55), Color(0xFF34C759),
                                     Color(0xFFFFCC00), Color(0xFF5856D6)
                                 )
@@ -593,7 +593,7 @@ fun DebugSettingsSheet(
                 Surface(shape = RoundedCornerShape(12.dp), color = colorScheme.surfaceVariant.copy(alpha = 0.2f)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = Color(0xFF007AFF))
+                            Icon(Icons.Filled.Bluetooth, contentDescription = null, tint = colorScheme.secondary)
                             Text(stringResource(R.string.debug_recent_scan_results), fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         }
                         if (scanResults.isEmpty()) {
@@ -606,7 +606,7 @@ fun DebugSettingsSheet(
                                             Text((res.peerID ?: stringResource(R.string.unknown)) + " • ${res.deviceAddress}", fontFamily = FontFamily.Monospace, fontSize = 12.sp)
                                             Text(stringResource(R.string.debug_rssi_fmt, res.rssi.toString()), fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = colorScheme.onSurface.copy(alpha = 0.7f))
                                         }
-                                        Text(stringResource(R.string.debug_connect), color = Color(0xFF00C851), fontFamily = FontFamily.Monospace, modifier = Modifier.clickable {
+                                        Text(stringResource(R.string.debug_connect), color = colorScheme.primary, fontFamily = FontFamily.Monospace, modifier = Modifier.clickable {
                                             meshService.connectionManager.connectToAddress(res.deviceAddress)
                                         })
                                     }
@@ -705,7 +705,7 @@ private fun DrawGraphBlock(
                             val barHeight = (h * ratio).coerceAtLeast(0f)
                             if (barHeight > 0.5f) {
                                 drawRect(
-                                    color = Color(0xFF00C851),
+                                    color = colorScheme.primary,
                                     topLeft = androidx.compose.ui.geometry.Offset(x = axisPx + i * w, y = h - barHeight),
                                     size = androidx.compose.ui.geometry.Size(w, barHeight)
                                 )

@@ -143,7 +143,7 @@ private fun SettingsToggleRow(
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D),
+                checkedTrackColor = colorScheme.primary,
                 uncheckedThumbColor = Color.White,
                 uncheckedTrackColor = colorScheme.surfaceVariant
             )
@@ -359,7 +359,7 @@ fun AboutSheet(
                                         statusIndicator = if (torMode.value == TorMode.ON) {
                                             {
                                                 val statusColor = when {
-                                                    torStatus.running && torStatus.bootstrapPercent >= 100 -> if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D)
+                                                    torStatus.running && torStatus.bootstrapPercent >= 100 -> colorScheme.primary
                                                     torStatus.running -> Color(0xFFFF9500)
                                                     else -> Color(0xFFFF3B30)
                                                 }
@@ -428,8 +428,8 @@ fun AboutSheet(
                                             valueRange = 0f..32f,
                                             steps = 31,
                                             colors = SliderDefaults.colors(
-                                                thumbColor = if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D),
-                                                activeTrackColor = if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D)
+                                                thumbColor = colorScheme.primary,
+                                                activeTrackColor = colorScheme.primary
                                             )
                                         )
                                         
@@ -475,7 +475,7 @@ fun AboutSheet(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             val statusColor = when {
-                                                torStatus.running && torStatus.bootstrapPercent >= 100 -> if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D)
+                                                torStatus.running && torStatus.bootstrapPercent >= 100 -> colorScheme.primary
                                                 torStatus.running -> Color(0xFFFF9500)
                                                 else -> Color(0xFFFF3B30)
                                             }

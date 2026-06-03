@@ -41,7 +41,8 @@ fun ScrollingWaveformRecorder(
             kotlinx.coroutines.delay(80)
         }
     }
-    WaveformCanvas(modifier = modifier, samples = samples, fillProgress = 1f, baseColor = Color(0xFF444444), fillColor = Color(0xFF00FF7F))
+    val colorScheme = MaterialTheme.colorScheme
+    WaveformCanvas(modifier = modifier, samples = samples, fillProgress = 1f, baseColor = colorScheme.surfaceVariant.copy(alpha = 0.3f), fillColor = colorScheme.primary.copy(alpha = 0.75f))
 }
 
 @Composable
@@ -70,14 +71,15 @@ fun WaveformPreview(
             }
         }
     }
+    val colorScheme = MaterialTheme.colorScheme
     WaveformCanvas(
         modifier = modifier,
         samples = stateSamples,
         fillProgress = if (stateSamples.isEmpty()) 0f else progress,
-        baseColor = Color(0x2200FF7F),
+        baseColor = colorScheme.surfaceVariant.copy(alpha = 0.2f),
         fillColor = when {
-            sendProgress != null -> Color(0xFF1E88E5) // blue while sending
-            else -> Color(0xFF00C851) // green during playback
+            sendProgress != null -> colorScheme.secondary.copy(alpha = 0.9f)
+            else -> colorScheme.primary.copy(alpha = 0.9f)
         },
         onSeek = onSeek
     )

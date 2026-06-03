@@ -112,8 +112,8 @@ fun LocationChannelsSheet(
     // iOS system colors (matches iOS exactly)
     val colorScheme = MaterialTheme.colorScheme
     val isDark = colorScheme.background.red + colorScheme.background.green + colorScheme.background.blue < 1.5f
-    val standardGreen = if (isDark) Color(0xFF32D74B) else Color(0xFF248A3D) // iOS green
-    val standardBlue = Color(0xFF007AFF) // iOS blue
+    val standardGreen = colorScheme.primary
+    val standardBlue = colorScheme.secondary
 
     if (isPresented) {
         BitchatBottomSheet(
@@ -620,7 +620,7 @@ private fun ChannelRow(
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = stringResource(R.string.cd_selected),
-                        tint = Color(0xFF32D74B), // iOS green for checkmark
+                        tint = colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
