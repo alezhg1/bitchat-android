@@ -113,7 +113,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
             .fillMaxSize()
             .background(colorScheme.background) // Extend background to fill entire screen including status bar
     ) {
-        val headerHeight = 64.dp
+        val headerHeight = 44.dp
         
         // Main content area that responds to keyboard/window insets
         Column(
@@ -506,6 +506,8 @@ private fun ChatDialogs(
     var showDebugSheet by remember { mutableStateOf(false) }
     AboutSheet(
         isPresented = showAppInfo,
+        nickname = nickname,
+        onNicknameChange = viewModel::setNickname,
         onDismiss = onAppInfoDismiss,
         onShowDebug = { showDebugSheet = true }
     )

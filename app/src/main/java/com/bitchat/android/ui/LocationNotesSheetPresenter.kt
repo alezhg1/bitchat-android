@@ -139,7 +139,7 @@ private fun LocationNotesErrorSheet(
                     locationManager.enableLocationChannels()
                     locationManager.refreshChannels()
                 }) {
-                    Text("Enable Location")
+                    Text(stringResource(R.string.location_notes_enable_location))
                 }
             }
 

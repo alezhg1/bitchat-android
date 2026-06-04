@@ -244,8 +244,6 @@ fun ChatHeaderContent(
         else -> {
             // Main header
             MainHeader(
-                nickname = nickname,
-                onNicknameChange = viewModel::setNickname,
                 onTitleClick = onShowAppInfo,
                 onTripleTitleClick = onTripleClick,
                 onSidebarClick = onSidebarClick,
@@ -325,8 +323,6 @@ private fun ChannelHeader(
 
 @Composable
 private fun MainHeader(
-    nickname: String,
-    onNicknameChange: (String) -> Unit,
     onTitleClick: () -> Unit,
     onTripleTitleClick: () -> Unit,
     onSidebarClick: () -> Unit,
@@ -347,32 +343,75 @@ private fun MainHeader(
     val bookmarksStore = remember { com.bitchat.android.geohash.GeohashBookmarksStore.getInstance(context) }
     val bookmarks by bookmarksStore.bookmarks.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(36.dp)
     ) {
-        Box(
+        HeaderChannelLabel(
+            viewModel = viewModel,
+            onClick = onLocationChannelsClick,
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
+
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 26.sp
+            ),
+            color = colorScheme.primary,
+            textAlign = TextAlign.Center,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(28.dp)
+                .align(Alignment.Center)
+                .singleOrTripleClickable(
+                    onSingleClick = onTitleClick,
+                    onTripleClick = onTripleTitleClick
+                )
+        )
+
+        Row(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            HeaderChannelLabel(
+            if (hasUnreadPrivateMessages.isNotEmpty()) {
+                Icon(
+                    imageVector = Icons.Filled.Email,
+                    contentDescription = stringResource(R.string.cd_unread_private_messages),
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { viewModel.openLatestUnreadPrivateChat() },
+                    tint = colorScheme.tertiary
+                )
+            }
+
+            val currentGeohash: String? = when (val sc = selectedLocationChannel) {
+                is com.bitchat.android.geohash.ChannelID.Location -> sc.channel.geohash
+                else -> null
+            }
+            if (currentGeohash != null) {
+                val isBookmarked = bookmarks.contains(currentGeohash)
+                Icon(
+                    imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = stringResource(R.string.cd_toggle_bookmark),
+                    tint = if (isBookmarked) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { bookmarksStore.toggle(currentGeohash) }
+                )
+            }
+
+            LocationNotesButton(
                 viewModel = viewModel,
-                onClick = onLocationChannelsClick,
-                modifier = Modifier.align(Alignment.CenterStart)
+                onClick = onLocationNotesClick
             )
 
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .singleOrTripleClickable(
-                        onSingleClick = onTitleClick,
-                        onTripleClick = onTripleTitleClick
-                    )
+            TorStatusDot(modifier = Modifier.size(8.dp))
+
+            PoWStatusIndicator(
+                modifier = Modifier,
+                style = PoWIndicatorStyle.COMPACT
             )
 
             PeerCounter(
@@ -382,64 +421,8 @@ private fun MainHeader(
                 isConnected = isConnected,
                 selectedLocationChannel = selectedLocationChannel,
                 geohashPeople = geohashPeople,
-                onClick = onSidebarClick,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                onClick = onSidebarClick
             )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            NicknameEditor(
-                value = nickname,
-                onValueChange = onNicknameChange
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (hasUnreadPrivateMessages.isNotEmpty()) {
-                    Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = stringResource(R.string.cd_unread_private_messages),
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clickable { viewModel.openLatestUnreadPrivateChat() },
-                        tint = colorScheme.tertiary
-                    )
-                }
-
-                val currentGeohash: String? = when (val sc = selectedLocationChannel) {
-                    is com.bitchat.android.geohash.ChannelID.Location -> sc.channel.geohash
-                    else -> null
-                }
-                if (currentGeohash != null) {
-                    val isBookmarked = bookmarks.contains(currentGeohash)
-                    Icon(
-                        imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                        contentDescription = stringResource(R.string.cd_toggle_bookmark),
-                        tint = if (isBookmarked) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clickable { bookmarksStore.toggle(currentGeohash) }
-                    )
-                }
-
-                LocationNotesButton(
-                    viewModel = viewModel,
-                    onClick = onLocationNotesClick
-                )
-
-                TorStatusDot(modifier = Modifier.size(8.dp))
-
-                PoWStatusIndicator(
-                    modifier = Modifier,
-                    style = PoWIndicatorStyle.COMPACT
-                )
-            }
         }
     }
 }

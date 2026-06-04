@@ -19,7 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,11 +103,14 @@ private fun SettingsSwitchRow(
 @Composable
 fun AboutSheet(
     isPresented: Boolean,
+    nickname: String,
+    onNicknameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onShowDebug: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     val versionName = remember {
         try {
@@ -146,6 +153,57 @@ fun AboutSheet(
                             color = colorScheme.onBackground.copy(alpha = 0.55f),
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
+                    }
+
+                    item(key = "nickname") {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            color = colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_nickname_label),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colorScheme.onSurface
+                                )
+                                OutlinedTextField(
+                                    value = nickname,
+                                    onValueChange = onNicknameChange,
+                                    singleLine = true,
+                                    placeholder = {
+                                        Text(stringResource(R.string.settings_nickname_hint))
+                                    },
+                                    leadingIcon = {
+                                        Text(
+                                            text = stringResource(R.string.at_symbol),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = colorScheme.primary,
+                                            modifier = Modifier.padding(start = 12.dp)
+                                        )
+                                    },
+                                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = { focusManager.clearFocus() }
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = colorScheme.primary,
+                                        unfocusedBorderColor = colorScheme.outline.copy(alpha = 0.4f)
+                                    )
+                                )
+                            }
+                        }
                     }
 
                     item(key = "settings") {
@@ -192,7 +250,7 @@ fun AboutSheet(
                                 HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.15f))
                                 SettingsSwitchRow(
                                     icon = Icons.Filled.Security,
-                                    title = "Tor Network",
+                                    title = stringResource(R.string.settings_tor_network),
                                     checked = torMode.value == TorMode.ON,
                                     onCheckedChange = { enabled ->
                                         if (torAvailable) {
@@ -252,7 +310,7 @@ fun AboutSheet(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Difficulty",
+                                            text = stringResource(R.string.settings_pow_difficulty),
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = colorScheme.onSurface
@@ -305,9 +363,9 @@ fun AboutSheet(
                                     Surface(color = statusColor, shape = CircleShape, modifier = Modifier.size(10.dp)) {}
                                     Text(
                                         text = if (torStatus.running) {
-                                            "Tor ${torStatus.bootstrapPercent}%"
+                                            stringResource(R.string.settings_tor_connected, torStatus.bootstrapPercent)
                                         } else {
-                                            "Tor disconnected"
+                                            stringResource(R.string.settings_tor_disconnected)
                                         },
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium

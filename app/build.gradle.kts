@@ -74,6 +74,9 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        localeFilters += listOf("ru")
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

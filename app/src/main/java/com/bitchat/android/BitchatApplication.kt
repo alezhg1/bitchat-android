@@ -1,6 +1,8 @@
 package com.bitchat.android
 
 import android.app.Application
+import android.content.Context
+import com.bitchat.android.util.LocaleUtils
 import com.bitchat.android.nostr.RelayDirectory
 import com.bitchat.android.ui.theme.ThemePreferenceManager
 import com.bitchat.android.net.ArtiTorManager
@@ -9,6 +11,10 @@ import com.bitchat.android.net.ArtiTorManager
  * Main application class for bitchat Android
  */
 class BitchatApplication : Application() {
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LocaleUtils.wrap(base))
+    }
 
     override fun onCreate() {
         super.onCreate()
