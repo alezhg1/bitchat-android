@@ -425,4 +425,22 @@
     <string name="debug_per_peer">По пиру</string>
     <string name="debug_incoming">Входящие</string>
     <string name="debug_outgoing">Исходящие</string>
+
+    <string name="cd_privacy_protected">Приватность защищена</string>
+    <string name="cd_mining_pow">Майнинг PoW</string>
+    <string name="cd_pow_enabled">PoW включён</string>
+    <string name="cd_proof_of_work">Доказательство работы</string>
+    <string name="pow_mining_ellipsis">майнинг…</string>
+    <string name="pow_label_format">pow: %1$d бит</string>
+    <string name="mesh_service_channel_name">Фоновый сервис Mesh</string>
+    <string name="mesh_service_channel_desc">Поддерживает Bluetooth mesh в фоне</string>
+    <string name="cd_location_notes">Заметки локации</string>
+    <string name="cd_save_current_image">Сохранить изображение</string>
+    <string name="toast_image_saved">Изображение сохранено в «Загрузки»</string>
+    <string name="toast_failed_to_save_image">Не удалось сохранить изображение</string>
+    <string name="cd_image_index_of">Изображение %1$d из %2$d</string>
+    <string name="cd_pick_file">Выбрать файл</string>
+    <string name="action_private_message_title">написать %1$s</string>
+    <string name="action_private_message_subtitle">отправить личное сообщение</string>
+    <string name="debug_tools_desc">инструменты разработчика для диагностики</string>
 </resources>
