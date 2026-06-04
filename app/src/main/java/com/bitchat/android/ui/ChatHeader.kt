@@ -4,6 +4,7 @@ package com.bitchat.android.ui
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
@@ -342,107 +343,38 @@ private fun MainHeader(
     val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
     val geohashPeople by viewModel.geohashPeople.collectAsStateWithLifecycle()
 
-    // Bookmarks store for current geohash toggle (iOS parity)
     val context = androidx.compose.ui.platform.LocalContext.current
     val bookmarksStore = remember { com.bitchat.android.geohash.GeohashBookmarksStore.getInstance(context) }
     val bookmarks by bookmarksStore.bookmarks.collectAsStateWithLifecycle()
 
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxHeight(),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(28.dp)
         ) {
-            Text(
-                text = stringResource(R.string.app_brand),
-                style = MaterialTheme.typography.headlineSmall,
-                color = colorScheme.primary,
-                modifier = Modifier.singleOrTripleClickable(
-                    onSingleClick = onTitleClick,
-                    onTripleClick = onTripleTitleClick
-                )
-            )
-            
-            Spacer(modifier = Modifier.width(2.dp))
-            
-            NicknameEditor(
-                value = nickname,
-                onValueChange = onNicknameChange
-            )
-        }
-        
-        // Right section with location channels button and peer counter
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-
-            // Unread private messages badge (click to open most recent DM)
-            if (hasUnreadPrivateMessages.isNotEmpty()) {
-                // Render icon directly to avoid symbol resolution issues
-                Icon(
-                    imageVector = Icons.Filled.Email,
-                    contentDescription = stringResource(R.string.cd_unread_private_messages),
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable { viewModel.openLatestUnreadPrivateChat() },
-                    tint = colorScheme.tertiary // Персиковый NeoN
-                )
-            }
-
-            // Location channels button (matching iOS implementation) and bookmark grouped tightly
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-                LocationChannelsButton(
-                    viewModel = viewModel,
-                    onClick = onLocationChannelsClick
-                )
-
-                // Bookmark toggle for current geohash (not shown for mesh)
-                val currentGeohash: String? = when (val sc = selectedLocationChannel) {
-                    is com.bitchat.android.geohash.ChannelID.Location -> sc.channel.geohash
-                    else -> null
-                }
-                if (currentGeohash != null) {
-                    val isBookmarked = bookmarks.contains(currentGeohash)
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 2.dp) // minimal gap between geohash and bookmark
-                            .size(20.dp)
-                            .clickable { bookmarksStore.toggle(currentGeohash) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = stringResource(R.string.cd_toggle_bookmark),
-                            tint = if (isBookmarked) colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f), // Фиолетовый NeoN
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-
-            // Location Notes button (extracted to separate component)
-            LocationNotesButton(
+            HeaderChannelLabel(
                 viewModel = viewModel,
-                onClick = onLocationNotesClick
+                onClick = onLocationChannelsClick,
+                modifier = Modifier.align(Alignment.CenterStart)
             )
 
-            // Tor status dot when Tor is enabled
-            TorStatusDot(
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = colorScheme.primary,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .size(8.dp)
-                    .padding(start = 0.dp, end = 2.dp)
+                    .align(Alignment.Center)
+                    .singleOrTripleClickable(
+                        onSingleClick = onTitleClick,
+                        onTripleClick = onTripleTitleClick
+                    )
             )
-            
-            // PoW status indicator
-            PoWStatusIndicator(
-                modifier = Modifier,
-                style = PoWIndicatorStyle.COMPACT
-            )
-            Spacer(modifier = Modifier.width(2.dp))
+
             PeerCounter(
                 connectedPeers = connectedPeers.filter { it != viewModel.meshService.myPeerID },
                 joinedChannels = joinedChannels,
@@ -450,62 +382,107 @@ private fun MainHeader(
                 isConnected = isConnected,
                 selectedLocationChannel = selectedLocationChannel,
                 geohashPeople = geohashPeople,
-                onClick = onSidebarClick
+                onClick = onSidebarClick,
+                modifier = Modifier.align(Alignment.CenterEnd)
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            NicknameEditor(
+                value = nickname,
+                onValueChange = onNicknameChange
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (hasUnreadPrivateMessages.isNotEmpty()) {
+                    Icon(
+                        imageVector = Icons.Filled.Email,
+                        contentDescription = stringResource(R.string.cd_unread_private_messages),
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { viewModel.openLatestUnreadPrivateChat() },
+                        tint = colorScheme.tertiary
+                    )
+                }
+
+                val currentGeohash: String? = when (val sc = selectedLocationChannel) {
+                    is com.bitchat.android.geohash.ChannelID.Location -> sc.channel.geohash
+                    else -> null
+                }
+                if (currentGeohash != null) {
+                    val isBookmarked = bookmarks.contains(currentGeohash)
+                    Icon(
+                        imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                        contentDescription = stringResource(R.string.cd_toggle_bookmark),
+                        tint = if (isBookmarked) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.75f),
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { bookmarksStore.toggle(currentGeohash) }
+                    )
+                }
+
+                LocationNotesButton(
+                    viewModel = viewModel,
+                    onClick = onLocationNotesClick
+                )
+
+                TorStatusDot(modifier = Modifier.size(8.dp))
+
+                PoWStatusIndicator(
+                    modifier = Modifier,
+                    style = PoWIndicatorStyle.COMPACT
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun LocationChannelsButton(
+private fun HeaderChannelLabel(
     viewModel: ChatViewModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    
-    // Get current channel selection from location manager
     val selectedChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
     val teleported by viewModel.isTeleported.collectAsStateWithLifecycle()
-    
+
     val (badgeText, badgeColor) = when (selectedChannel) {
-        is com.bitchat.android.geohash.ChannelID.Mesh -> {
-            "#mesh" to colorScheme.primary // Фиолетовый NeoN для mesh
-        }
+        is com.bitchat.android.geohash.ChannelID.Mesh -> "#mesh" to colorScheme.primary
         is com.bitchat.android.geohash.ChannelID.Location -> {
             val geohash = (selectedChannel as com.bitchat.android.geohash.ChannelID.Location).channel.geohash
-            "#$geohash" to colorScheme.tertiary // Персиковый NeoN для location
+            "#$geohash" to colorScheme.tertiary
         }
-        null -> "#mesh" to colorScheme.primary // По умолчанию фиолетовый
+        null -> "#mesh" to colorScheme.primary
     }
-    
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = badgeColor
-        ),
-        contentPadding = PaddingValues(start = 4.dp, end = 0.dp, top = 2.dp, bottom = 2.dp)
+
+    Row(
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(start = 4.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = badgeText,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = FontFamily.Monospace
-                ),
-                color = badgeColor,
-                maxLines = 1
+        Text(
+            text = badgeText,
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            color = badgeColor,
+            maxLines = 1
+        )
+        if (teleported) {
+            Spacer(modifier = Modifier.width(2.dp))
+            Icon(
+                imageVector = Icons.Default.PinDrop,
+                contentDescription = stringResource(R.string.cd_teleported),
+                modifier = Modifier.size(12.dp),
+                tint = badgeColor
             )
-            
-            // Teleportation indicator (like iOS)
-            if (teleported) {
-                Spacer(modifier = Modifier.width(2.dp))
-                Icon(
-                    imageVector = Icons.Default.PinDrop,
-                    contentDescription = stringResource(R.string.cd_teleported),
-                    modifier = Modifier.size(12.dp),
-                    tint = badgeColor
-                )
-            }
         }
     }
 }

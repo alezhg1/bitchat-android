@@ -113,7 +113,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
             .fillMaxSize()
             .background(colorScheme.background) // Extend background to fill entire screen including status bar
     ) {
-        val headerHeight = 42.dp
+        val headerHeight = 64.dp
         
         // Main content area that responds to keyboard/window insets
         Column(

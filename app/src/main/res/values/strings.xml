@@ -367,6 +367,7 @@
   <string name="location_tracking_warning">NeoN does NOT track your location</string>
   <string name="at_symbol">@</string>
   <string name="app_brand">NeoN/</string>
+  <string name="settings_sheet_title">Settings</string>
   <string name="channel_count_prefix"> · ⧉ </string>
   <string name="geohash_people_header">PEOPLE</string>
   <string name="nobody_around">nobody around...</string>
