@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 import com.bitchat.android.features.voice.AudioWaveformExtractor
 import com.bitchat.android.features.voice.VoiceWaveformCache
 import com.bitchat.android.features.voice.resampleWave
