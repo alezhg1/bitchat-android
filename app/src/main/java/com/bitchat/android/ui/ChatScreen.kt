@@ -491,6 +491,7 @@ private fun ChatDialogs(
     onMeshPeerListDismiss: () -> Unit,
 ) {
     val privateChatSheetPeer by viewModel.privateChatSheetPeer.collectAsStateWithLifecycle()
+    val nickname by viewModel.nickname.collectAsStateWithLifecycle()
 
     // Password dialog
     PasswordPromptDialog(
