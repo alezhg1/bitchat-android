@@ -1,0 +1,11 @@
+﻿.\gradlew :  
+C:\Users\alez\AppData\Local\Temp\ps-script-0fd40d26-8f5c-49f1-9205-e6b767122d57.ps1:7 знак:50
++ ... at-android; .\gradlew :app:compileDebugKotlin --no-daemon 2>&1 | Out- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH. 
+ 
+Please set the JAVA_HOME variable in your environment to match the 
+location of your Java installation. 

@@ -561,11 +561,13 @@ private fun ChannelRow(
     trailingContent: (@Composable (() -> Unit))? = null,
     onClick: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     // iOS-style list row (plain button, no card background)
     Surface(
         onClick = onClick,
         color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            colorScheme.primaryContainer.copy(alpha = 0.15f)
         } else {
             Color.Transparent
         },
@@ -594,7 +596,7 @@ private fun ChannelRow(
                         fontSize = BASE_FONT_SIZE.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = if (titleBold) FontWeight.Bold else FontWeight.Normal,
-                        color = titleColor ?: MaterialTheme.colorScheme.onSurface
+                        color = titleColor ?: colorScheme.onSurface
                     )
 
                     countSuffix?.let { count ->
@@ -602,7 +604,7 @@ private fun ChannelRow(
                             text = count,
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -611,7 +613,7 @@ private fun ChannelRow(
                     text = subtitle,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
 
