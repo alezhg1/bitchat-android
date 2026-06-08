@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NeoN</string>
-    <string name="permission_bluetooth_rationale">Требуется разрешение Bluetooth для общения p2p без интернета.</string>
-    <string name="permission_location_rationale">Требуется доступ к геопозиции для поиска ближайших устройств по Bluetooth.</string>
-    <string name="permission_notification_rationale">Требуется доступ к уведомлениям для оповещения о новых сообщениях.</string>
+    <string name="permission_bluetooth_rationale">Для общения требуется разрешение Bluetooth.</string>
+    <string name="permission_location_rationale">Для полноценной работы приложения требуется доступ к геопозиции.</string>
+    <string name="permission_notification_rationale">Для уведомлений требуется доступ</string>
     <string name="nickname_hint">ник</string>
-    <string name="message_hint">введите сообщение…</string>
+    <string name="message_hint">сообщение</string>
     <string name="channel_password_hint">Пароль</string>
-    <string name="join_channel">Войти в канал</string>
+    <string name="join_channel">Зайти в канал</string>
     <string name="leave_channel">Покинуть</string>
     <string name="send_message">Отправить</string>
     <string name="show_commands">Показать команды</string>
@@ -16,7 +16,7 @@
     <string name="channels">Каналы</string>
     <string name="online_users">Пользователи онлайн</string>
     <string name="no_one_connected">Нет подключённых</string>
-    <string name="emergency_clear_hint">Тройной тап для удаления всех данных</string>
+    <string name="emergency_clear_hint">Удалить кэш (тройное нажатие)</string>
     <string name="your_network">Сеть</string>
 
     <string name="battery_optimization_detected">Обнаружена оптимизация батареи</string>
@@ -24,7 +24,7 @@
     <string name="battery_optimization_not_required">Оптимизация батареи не требуется</string>
     <string name="battery_optimization_checking">Проверка оптимизации батареи</string>
     <string name="battery_optimization_why_disable">Зачем отключать оптимизацию?</string>
-    <string name="battery_optimization_explanation">NeoN работает в фоне для поддержания mesh‑подключений с ближайшими устройствами. Оптимизация батареи может их прервать, что ведёт к задержкам и потерям сообщений.\n\nОтключение гарантирует надёжный обмен p2p.</string>
+    <string name="battery_optimization_explanation">NeoN работает в фоне для поддержания подключений с ближайшими устройствами. Оптимизация батареи может их прервать, что ведёт к задержкам и потерям сообщений.\n\nОтключение гарантирует надёжный обмен p2p.</string>
     <string name="battery_optimization_disable_button">Отключить оптимизацию</string>
     <string name="battery_optimization_note">Примечание: это можно изменить позже в Настройки Android &gt; Приложения &gt; NeoN &gt; Батарея</string>
     <string name="battery_optimization_not_supported_explanation">На вашем устройстве не требуются настройки оптимизации. NeoN будет работать штатно.</string>
