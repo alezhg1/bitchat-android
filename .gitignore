@@ -1,54 +1,54 @@
-*.class
-*.o
-*.obj
-*.out
-*.pyc
-__pycache__/
-*.swp
-*.swo
-*.tmp
-*.log
+```
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aar
+*.ap_
+build/
+*/build/
+app/build/
+
+# Kotlin
+*.kotlin_metadata
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# Environment
 .env
 .env.local
 *.env.*
-node_modules/
-venv/
-.venv/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
-.cargo/
-zig-cache/
-zig-out/
-.vscode/
-.idea/
+
+# Coverage
 coverage/
 htmlcov/
 .coverage
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+
+# Temp files
+*.tmp
+*.swp
+*.swo
+
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+```

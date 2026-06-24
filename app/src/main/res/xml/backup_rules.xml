@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <exclude domain="sharedpref" path="bitchat_prefs.xml"/>
+    <exclude domain="sharedpref" path="neon_prefs.xml"/>
+    <exclude domain="sharedpref" path="neon_crypto_secure.xml"/>
     <exclude domain="sharedpref" path="bitchat_crypto.xml"/>
 </full-backup-content>
