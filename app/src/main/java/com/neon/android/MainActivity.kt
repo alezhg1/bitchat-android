@@ -32,6 +32,7 @@ import com.neon.android.onboarding.InitializingScreen
 import com.neon.android.onboarding.LocationCheckScreen
 import com.neon.android.onboarding.LocationStatus
 import com.neon.android.onboarding.LocationStatusManager
+import com.neon.android.onboarding.LoginScreen
 import com.neon.android.onboarding.OnboardingCoordinator
 import com.neon.android.onboarding.OnboardingState
 import com.neon.android.onboarding.PermissionExplanationScreen
@@ -215,6 +216,17 @@ class MainActivity : OrientationAwareActivity() {
         when (onboardingState) {
             OnboardingState.PERMISSION_REQUESTING -> {
                 InitializingScreen(modifier)
+            }
+
+            OnboardingState.LOGIN -> {
+                LoginScreen(
+                    modifier = modifier,
+                    onLogin = { name ->
+                        chatViewModel.setNickname(name)
+                        mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
+                        initializeApp()
+                    }
+                )
             }
             
             OnboardingState.BLUETOOTH_CHECK -> {
@@ -413,8 +425,7 @@ class MainActivity : OrientationAwareActivity() {
                 ) {
                     mainViewModel.updateOnboardingState(OnboardingState.BACKGROUND_LOCATION_EXPLANATION)
                 } else {
-                    mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
-                    initializeApp()
+                    checkLoginAndProceed()
                 }
             } else {
                 Log.d("MainActivity", "Existing user missing permissions, showing explanation")
@@ -571,9 +582,23 @@ class MainActivity : OrientationAwareActivity() {
             else -> {
                 // Both are enabled, proceed to app initialization
                 Log.d("MainActivity", "Both Bluetooth and Location services are enabled, proceeding to initialization")
-                mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
-                initializeApp()
+                checkLoginAndProceed()
             }
+        }
+    }
+
+    /**
+     * Check if user is logged in (has nickname) and proceed to initialization or login screen
+     */
+    private fun checkLoginAndProceed() {
+        val currentNickname = chatViewModel.nickname.value
+        if (currentNickname.isBlank()) {
+            Log.d("MainActivity", "No nickname found, showing login screen")
+            mainViewModel.updateOnboardingState(OnboardingState.LOGIN)
+        } else {
+            Log.d("MainActivity", "Nickname found: $currentNickname, proceeding to initialization")
+            mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
+            initializeApp()
         }
     }
     
