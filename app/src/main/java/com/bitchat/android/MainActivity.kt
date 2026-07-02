@@ -286,24 +286,25 @@ class MainActivity : OrientationAwareActivity() {
                 )
             }
 
-            OnboardingState.CHECKING, OnboardingState.INITIALIZING, OnboardingState.COMPLETE -> {
-                // Set up back navigation handling for the chat screen
-                val backCallback = object : OnBackPressedCallback(true) {
-                    override fun handleOnBackPressed() {
-                        // Let ChatViewModel handle navigation state
-                        val handled = chatViewModel.handleBackPressed()
-                        if (!handled) {
-                            // If ChatViewModel doesn't handle it, disable this callback
-                            // and let the system handle it (which will exit the app)
-                            this.isEnabled = false
-                            onBackPressedDispatcher.onBackPressed()
-                            this.isEnabled = true
+            OnboardingState.CHECKING, OnboardingState.INITIALIZING -> {
+                InitializingScreen(modifier)
+            }
+
+            OnboardingState.COMPLETE -> {
+                DisposableEffect(Unit) {
+                    val backCallback = object : OnBackPressedCallback(true) {
+                        override fun handleOnBackPressed() {
+                            val handled = chatViewModel.handleBackPressed()
+                            if (!handled) {
+                                isEnabled = false
+                                onBackPressedDispatcher.onBackPressed()
+                                isEnabled = true
+                            }
                         }
                     }
+                    onBackPressedDispatcher.addCallback(this@MainActivity, backCallback)
+                    onDispose { backCallback.remove() }
                 }
-
-                // Add the callback - this will be automatically removed when the activity is destroyed
-                onBackPressedDispatcher.addCallback(this, backCallback)
                 ChatScreen(viewModel = chatViewModel)
             }
             
@@ -677,6 +678,7 @@ class MainActivity : OrientationAwareActivity() {
                 // Set up mesh service delegate and start services
                 meshService.delegate = chatViewModel
                 meshService.startServices()
+                chatViewModel.onAppReady()
                 
                 Log.d("MainActivity", "Mesh service started successfully")
                 
