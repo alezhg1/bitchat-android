@@ -21,11 +21,20 @@ class MeshDelegateHandler(
     private val coroutineScope: CoroutineScope,
     private val onHapticFeedback: () -> Unit,
     private val getMyPeerID: () -> String,
-    private val getMeshService: () -> BluetoothMeshService
+    private val getMeshService: () -> BluetoothMeshService,
+    private val appContext: android.content.Context? = null
 ) : BluetoothMeshDelegate {
 
     override fun didReceiveMessage(message: BitchatMessage) {
         coroutineScope.launch {
+            if (message.content.startsWith(com.bitchat.android.geohash.LocationSharingService.GEOLOC_PREFIX)) {
+                appContext?.let { ctx ->
+                    com.bitchat.android.geohash.LocationSharingService
+                        .getInstance(ctx)
+                        .handleIncomingMessage(message.content, message.senderPeerID)
+                }
+                return@launch
+            }
             // FIXED: Deduplicate messages from dual connection paths
             val messageKey = messageManager.generateMessageKey(message)
             if (messageManager.isMessageProcessed(messageKey)) {
