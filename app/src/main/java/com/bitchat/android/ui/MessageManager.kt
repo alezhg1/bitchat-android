@@ -1,20 +1,37 @@
 package com.bitchat.android.ui
 
+import android.content.Context
 import com.bitchat.android.model.BitchatMessage
 import com.bitchat.android.model.DeliveryStatus
+import com.bitchat.android.services.MessagePersistenceService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
 import java.util.Collections
 
 /**
  * Handles all message-related operations including deduplication and organization
  */
-class MessageManager(private val state: ChatState) {
+class MessageManager(
+    private val state: ChatState,
+    private val appContext: Context? = null,
+    private val persistenceScope: CoroutineScope? = null
+) {
     
     // Message deduplication - FIXED: Prevent duplicate messages from dual connection paths
     private val processedUIMessages = Collections.synchronizedSet(mutableSetOf<String>())
     private val recentSystemEvents = Collections.synchronizedMap(mutableMapOf<String, Long>())
     private val MESSAGE_DEDUP_TIMEOUT = com.bitchat.android.util.AppConstants.UI.MESSAGE_DEDUP_TIMEOUT_MS // 30 seconds
     private val SYSTEM_EVENT_DEDUP_TIMEOUT = com.bitchat.android.util.AppConstants.UI.SYSTEM_EVENT_DEDUP_TIMEOUT_MS // 5 seconds
+
+    private fun persist(block: suspend MessagePersistenceService.() -> Unit) {
+        val ctx = appContext ?: return
+        val scope = persistenceScope ?: return
+        scope.launch(Dispatchers.IO) {
+            try { block(MessagePersistenceService.getInstance(ctx)) } catch (_: Exception) { }
+        }
+    }
     
     // MARK: - Public Message Management
     
@@ -24,6 +41,9 @@ class MessageManager(private val state: ChatState) {
         state.setMessages(currentMessages)
         // Reflect into process-wide store so snapshot replacements don't drop local outgoing messages
         try { com.bitchat.android.services.AppStateStore.addPublicMessage(message) } catch (_: Exception) { }
+        if (message.sender != "system") {
+            persist { savePublicMessage(message) }
+        }
     }
 
     // Log a system message into the main chat (visible to user)
@@ -56,6 +76,7 @@ class MessageManager(private val state: ChatState) {
         state.setChannelMessages(currentChannelMessages)
         // Reflect into process-wide store
         try { com.bitchat.android.services.AppStateStore.addChannelMessage(channel, message) } catch (_: Exception) { }
+        persist { saveChannelMessage(channel, message) }
         
         // Update unread count if not currently viewing this channel
         // Consider both classic channels (state.currentChannel) and geohash location channel selection
@@ -111,6 +132,7 @@ class MessageManager(private val state: ChatState) {
         state.setPrivateChats(currentPrivateChats)
         // Reflect into process-wide store
         try { com.bitchat.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
+        persist { savePrivateMessage(peerID, message) }
         
         // Mark as unread if not currently viewing this chat
         if (state.getSelectedPrivateChatPeerValue() != peerID && message.sender != state.getNicknameValue()) {
@@ -132,6 +154,7 @@ class MessageManager(private val state: ChatState) {
         state.setPrivateChats(currentPrivateChats)
         // Reflect into process-wide store
         try { com.bitchat.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
+        persist { savePrivateMessage(peerID, message) }
     }
     
     fun clearPrivateMessages(peerID: String) {
