@@ -65,6 +65,9 @@ fun ChatScreen(viewModel: ChatViewModel) {
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordInput by remember { mutableStateOf("") }
     var showLocationChannelsSheet by remember { mutableStateOf(false) }
+    var showChatsListSheet by remember { mutableStateOf(false) }
+    var showMapScreen by remember { mutableStateOf(false) }
+    var showProfileSetup by remember { mutableStateOf(!viewModel.isProfileSetupDone()) }
     var showLocationNotesSheet by remember { mutableStateOf(false) }
     var showUserSheet by remember { mutableStateOf(false) }
     var selectedUserForSheet by remember { mutableStateOf("") }
@@ -113,7 +116,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
             .fillMaxSize()
             .background(colorScheme.background) // Extend background to fill entire screen including status bar
     ) {
-        val headerHeight = 42.dp
+        val headerHeight = 56.dp
         
         // Main content area that responds to keyboard/window insets
         Column(
@@ -252,6 +255,8 @@ fun ChatScreen(viewModel: ChatViewModel) {
             onShowAppInfo = { viewModel.showAppInfo() },
             onPanicClear = { viewModel.panicClearAllData() },
             onLocationChannelsClick = { showLocationChannelsSheet = true },
+            onChatsClick = { showChatsListSheet = true },
+            onMapClick = { showMapScreen = true },
             onLocationNotesClick = { showLocationNotesSheet = true }
         )
 
@@ -343,7 +348,27 @@ fun ChatScreen(viewModel: ChatViewModel) {
         onSecurityVerificationSheetDismiss = viewModel::hideSecurityVerificationSheet,
         showMeshPeerListSheet = showMeshPeerListSheet,
         onMeshPeerListDismiss = viewModel::hideMeshPeerList,
+        showChatsListSheet = showChatsListSheet,
+        onChatsListSheetDismiss = { showChatsListSheet = false },
+        onSelectMeshChat = { viewModel.switchToMeshChat() },
+        onSelectLocationChat = { showLocationChannelsSheet = true },
+        onSelectChannelChat = { viewModel.switchToChannel(it) },
+        showMapScreen = showMapScreen,
+        onMapScreenDismiss = { showMapScreen = false },
     )
+
+    if (showProfileSetup) {
+        ProfileSetupScreen(
+            staticId = viewModel.staticId.collectAsStateWithLifecycle().value.ifBlank {
+                viewModel.meshService.myPeerID
+            },
+            onComplete = { fio, role ->
+                viewModel.completeProfileSetup(fio, role)
+                showProfileSetup = false
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
 
 @Composable
@@ -419,6 +444,8 @@ private fun ChatFloatingHeader(
     onShowAppInfo: () -> Unit,
     onPanicClear: () -> Unit,
     onLocationChannelsClick: () -> Unit,
+    onChatsClick: () -> Unit = {},
+    onMapClick: () -> Unit = {},
     onLocationNotesClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -448,6 +475,8 @@ private fun ChatFloatingHeader(
                     onTripleClick = onPanicClear,
                     onShowAppInfo = onShowAppInfo,
                     onLocationChannelsClick = onLocationChannelsClick,
+                    onChatsClick = onChatsClick,
+                    onMapClick = onMapClick,
                     onLocationNotesClick = {
                         // Ensure location is loaded before showing sheet
                         locationManager.refreshChannels()
@@ -489,6 +518,13 @@ private fun ChatDialogs(
     onSecurityVerificationSheetDismiss: () -> Unit,
     showMeshPeerListSheet: Boolean,
     onMeshPeerListDismiss: () -> Unit,
+    showChatsListSheet: Boolean = false,
+    onChatsListSheetDismiss: () -> Unit = {},
+    onSelectMeshChat: () -> Unit = {},
+    onSelectLocationChat: () -> Unit = {},
+    onSelectChannelChat: (String) -> Unit = {},
+    showMapScreen: Boolean = false,
+    onMapScreenDismiss: () -> Unit = {},
 ) {
     val privateChatSheetPeer by viewModel.privateChatSheetPeer.collectAsStateWithLifecycle()
 
@@ -517,6 +553,22 @@ private fun ChatDialogs(
         )
     }
     
+    // Chats list sheet
+    ChatsListSheet(
+        isPresented = showChatsListSheet,
+        onDismiss = onChatsListSheetDismiss,
+        viewModel = viewModel,
+        onSelectMesh = onSelectMeshChat,
+        onSelectLocation = onSelectLocationChat,
+        onSelectChannel = onSelectChannelChat
+    )
+
+    // Map screen for admin/teacher
+    MapScreen(
+        isPresented = showMapScreen,
+        onDismiss = onMapScreenDismiss
+    )
+
     // Location channels sheet
     if (showLocationChannelsSheet) {
         LocationChannelsSheet(
