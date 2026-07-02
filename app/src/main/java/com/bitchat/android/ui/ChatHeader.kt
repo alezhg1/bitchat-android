@@ -225,8 +225,10 @@ fun ChatHeaderContent(
     onSidebarClick: () -> Unit,
     onTripleClick: () -> Unit,
     onShowAppInfo: () -> Unit,
+    onChatsClick: () -> Unit,
     onLocationChannelsClick: () -> Unit,
-    onLocationNotesClick: () -> Unit
+    onLocationNotesClick: () -> Unit,
+    onMapClick: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -244,12 +246,16 @@ fun ChatHeaderContent(
             // Main header
             MainHeader(
                 nickname = nickname,
-                onNicknameChange = viewModel::setNickname,
+                onFioChange = viewModel::setFio,
+                staticId = viewModel.staticId.collectAsStateWithLifecycle().value,
+                fio = viewModel.fio.collectAsStateWithLifecycle().value,
                 onTitleClick = onShowAppInfo,
                 onTripleTitleClick = onTripleClick,
                 onSidebarClick = onSidebarClick,
+                onChatsClick = onChatsClick,
                 onLocationChannelsClick = onLocationChannelsClick,
                 onLocationNotesClick = onLocationNotesClick,
+                onMapClick = onMapClick,
                 viewModel = viewModel
             )
         }
@@ -325,12 +331,16 @@ private fun ChannelHeader(
 @Composable
 private fun MainHeader(
     nickname: String,
-    onNicknameChange: (String) -> Unit,
+    fio: String,
+    staticId: String,
+    onFioChange: (String) -> Unit,
     onTitleClick: () -> Unit,
     onTripleTitleClick: () -> Unit,
     onSidebarClick: () -> Unit,
+    onChatsClick: () -> Unit,
     onLocationChannelsClick: () -> Unit,
     onLocationNotesClick: () -> Unit,
+    onMapClick: () -> Unit,
     viewModel: ChatViewModel
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -352,37 +362,43 @@ private fun MainHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxHeight(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.weight(1f, fill = false)
         ) {
-            Text(
-                text = stringResource(R.string.app_brand),
-                style = MaterialTheme.typography.headlineSmall,
-                color = colorScheme.primary,
-                modifier = Modifier.singleOrTripleClickable(
-                    onSingleClick = onTitleClick,
-                    onTripleClick = onTripleTitleClick
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.app_brand),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.primary,
+                    modifier = Modifier.singleOrTripleClickable(
+                        onSingleClick = onTitleClick,
+                        onTripleClick = onTripleTitleClick
+                    )
                 )
-            )
-            
-            Spacer(modifier = Modifier.width(2.dp))
-            
-            NicknameEditor(
-                value = nickname,
-                onValueChange = onNicknameChange
-            )
+                Spacer(modifier = Modifier.width(6.dp))
+                NicknameEditor(
+                    value = fio.ifBlank { nickname },
+                    onValueChange = onFioChange
+                )
+            }
+            if (staticId.isNotBlank()) {
+                Text(
+                    text = "ID: $staticId",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
         }
         
-        // Right section with location channels button and peer counter
+        // Right section
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
 
-            // Unread private messages badge (click to open most recent DM)
             if (hasUnreadPrivateMessages.isNotEmpty()) {
-                // Render icon directly to avoid symbol resolution issues
                 Icon(
                     imageVector = Icons.Filled.Email,
                     contentDescription = stringResource(R.string.cd_unread_private_messages),
@@ -393,9 +409,29 @@ private fun MainHeader(
                 )
             }
 
-            // Location channels button (matching iOS implementation) and bookmark grouped tightly
+            // Chats list button
+            TextButton(
+                onClick = onChatsClick,
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text("Чаты", color = Color(0xFF007AFF), style = MaterialTheme.typography.labelLarge)
+            }
+
+            // Map button for admin/teacher
+            val role = remember { com.bitchat.android.identity.UserProfileManager.getInstance(context).getRole() }
+            if (role.canViewMap()) {
+                IconButton(onClick = onMapClick, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Map,
+                        contentDescription = "Карта",
+                        tint = Color(0xFFE53935),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-                LocationChannelsButton(
+                CurrentChatBadge(
                     viewModel = viewModel,
                     onClick = onLocationChannelsClick
                 )
@@ -457,25 +493,21 @@ private fun MainHeader(
 }
 
 @Composable
-private fun LocationChannelsButton(
+private fun CurrentChatBadge(
     viewModel: ChatViewModel,
     onClick: () -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    
-    // Get current channel selection from location manager
     val selectedChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
     val teleported by viewModel.isTeleported.collectAsStateWithLifecycle()
+    val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
     
-    val (badgeText, badgeColor) = when (selectedChannel) {
-        is com.bitchat.android.geohash.ChannelID.Mesh -> {
-            "#mesh" to Color(0xFF007AFF) // iOS blue for mesh
-        }
-        is com.bitchat.android.geohash.ChannelID.Location -> {
+    val (badgeText, badgeColor) = when {
+        currentChannel != null -> currentChannel!! to Color(0xFFFF9500)
+        selectedChannel is com.bitchat.android.geohash.ChannelID.Location -> {
             val geohash = (selectedChannel as com.bitchat.android.geohash.ChannelID.Location).channel.geohash
-            "#$geohash" to Color(0xFF00C851) // Green for location
+            "Локация" to Color(0xFF00C851)
         }
-        null -> "#mesh" to Color(0xFF007AFF) // Default to mesh
+        else -> "Общий" to Color(0xFF007AFF)
     }
     
     Button(

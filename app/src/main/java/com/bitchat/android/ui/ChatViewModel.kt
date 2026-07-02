@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.random.Random
 import com.bitchat.android.services.VerificationService
-import com.bitchat.android.identity.SecureIdentityStateManager
+import com.bitchat.android.identity.UserProfileManager
 import com.bitchat.android.noise.NoiseSession
 import com.bitchat.android.nostr.GeohashAliasRegistry
 import com.bitchat.android.util.dataFromHexString
@@ -87,8 +87,9 @@ class ChatViewModel(
 
     // Specialized managers
     private val dataManager = DataManager(application.applicationContext)
+    private val profileManager = UserProfileManager.getInstance(application.applicationContext)
     private val identityManager by lazy { SecureIdentityStateManager(getApplication()) }
-    private val messageManager = MessageManager(state)
+    private val messageManager = MessageManager(state, application.applicationContext, viewModelScope)
     private val channelManager = ChannelManager(state, messageManager, dataManager, viewModelScope)
 
     // Create Noise session delegate for clean dependency injection
@@ -130,7 +131,8 @@ class ChatViewModel(
         coroutineScope = viewModelScope,
         onHapticFeedback = { ChatViewModelUtils.triggerHapticFeedback(application.applicationContext) },
         getMyPeerID = { meshService.myPeerID },
-        getMeshService = { meshService }
+        getMeshService = { meshService },
+        appContext = application.applicationContext
     )
     
     // New Geohash architecture ViewModel (replaces God object service usage in UI path)
@@ -151,6 +153,11 @@ class ChatViewModel(
     val messages: StateFlow<List<BitchatMessage>> = state.messages
     val connectedPeers: StateFlow<List<String>> = state.connectedPeers
     val nickname: StateFlow<String> = state.nickname
+    private val _fio = MutableStateFlow("")
+    val fio: StateFlow<String> = _fio.asStateFlow()
+    private val _staticId = MutableStateFlow("")
+    val staticId: StateFlow<String> = _staticId.asStateFlow()
+    val userRole get() = profileManager.getRole()
     val isConnected: StateFlow<Boolean> = state.isConnected
     val privateChats: StateFlow<Map<String, List<BitchatMessage>>> = state.privateChats
     val selectedPrivateChatPeer: StateFlow<String?> = state.selectedPrivateChatPeer
@@ -239,9 +246,12 @@ class ChatViewModel(
     }
     
     private fun loadAndInitialize() {
-        // Load nickname
         val nickname = dataManager.loadNickname()
         state.setNickname(nickname)
+        profileManager.ensureStaticId(meshService.myPeerID)
+        _staticId.value = profileManager.getStaticId() ?: meshService.myPeerID
+        val fio = profileManager.getFio()
+        _fio.value = if (fio != "Пользователь") fio else nickname
         
         // Load data
         val (joinedChannels, protectedChannels) = channelManager.loadChannelData()
@@ -286,25 +296,35 @@ class ChatViewModel(
             }
         }
         
-        // Initialize new geohash architecture
+        // Deferred until permissions granted and mesh service is ready (see onAppReady)
+    }
+
+    private var appReady = false
+
+    /** Called from MainActivity after permissions and mesh service are ready. */
+    fun onAppReady() {
+        if (appReady) return
+        appReady = true
+
         geohashViewModel.initialize()
-
-        // Initialize favorites persistence service
         com.bitchat.android.favorites.FavoritesPersistenceService.initialize(getApplication())
-
-        // Load verified fingerprints from secure storage
         verificationHandler.loadVerifiedFingerprints()
-
-
-        // Ensure NostrTransport knows our mesh peer ID for embedded packets
         try {
             val nostrTransport = com.bitchat.android.nostr.NostrTransport.getInstance(getApplication())
             nostrTransport.senderPeerID = meshService.myPeerID
         } catch (_: Exception) { }
 
-        // Note: Mesh service is now started by MainActivity
+        viewModelScope.launch {
+            try {
+                com.bitchat.android.services.MessagePersistenceService
+                    .getInstance(getApplication())
+                    .loadAllIntoAppState()
+            } catch (_: Exception) { }
+        }
 
-        // BLE receives are inserted by MessageHandler path; no VoiceNoteBus for Tor in this branch.
+        com.bitchat.android.geohash.LocationSharingService
+            .getInstance(getApplication())
+            .start(meshService, viewModelScope)
     }
     
     override fun onCleared() {
@@ -312,7 +332,25 @@ class ChatViewModel(
         // Note: Mesh service lifecycle is now managed by MainActivity
     }
     
-    // MARK: - Nickname Management
+    // MARK: - Profile / Nickname Management
+
+    fun setFio(newFio: String) {
+        val trimmed = newFio.trim()
+        if (trimmed.isEmpty()) return
+        profileManager.setFio(trimmed)
+        _fio.value = trimmed
+        setNickname(trimmed)
+    }
+
+    fun completeProfileSetup(fio: String, role: com.bitchat.android.identity.UserRole) {
+        profileManager.setFio(fio)
+        profileManager.setRole(role)
+        profileManager.markProfileSetupDone()
+        _fio.value = fio
+        setNickname(fio)
+    }
+
+    fun isProfileSetupDone(): Boolean = profileManager.isProfileSetupDone()
     
     fun setNickname(newNickname: String) {
         state.setNickname(newNickname)
@@ -368,6 +406,15 @@ class ChatViewModel(
     
     fun switchToChannel(channel: String?) {
         channelManager.switchToChannel(channel)
+    }
+
+    fun switchToMeshChat() {
+        switchToChannel(null)
+        try {
+            com.bitchat.android.geohash.LocationChannelManager
+                .getInstance(getApplication())
+                .select(com.bitchat.android.geohash.ChannelID.Mesh)
+        } catch (_: Exception) { }
     }
     
     fun leaveChannel(channel: String) {
