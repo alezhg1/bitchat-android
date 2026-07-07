@@ -2,6 +2,10 @@
 # Gradle
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
+.gradle/
+.idea/
+build/
+*.lock
 
 # Android
 *.apk
