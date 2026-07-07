@@ -1,0 +1,15 @@
+package com.neon.android.onboarding
+
+enum class OnboardingState {
+    CHECKING,
+    BLUETOOTH_CHECK,
+    LOCATION_CHECK,
+    BATTERY_OPTIMIZATION_CHECK,
+    PERMISSION_EXPLANATION,
+    BACKGROUND_LOCATION_EXPLANATION,
+    PERMISSION_REQUESTING,
+    LOGIN,
+    INITIALIZING,
+    COMPLETE,
+    ERROR
+}

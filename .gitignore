@@ -1,65 +1,54 @@
-# Android Studio / IntelliJ
+```
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aar
+*.ap_
+build/
+*/build/
+app/build/
+
+# Kotlin
+*.kotlin_metadata
+
+# IDE
 .idea/
 *.iml
-build/
-!*/build/filtered-manifest/
-!*/build/generated/
-!*/build/intermediates/
-local.properties
-.gradle/
-captures/
-.externalNativeBuild/
-debug_keystore/
-*.keystore
-debug.keystore
-app/release
+*.ipr
+*.iws
+.vscode/
 
-# Gradle
-/build/
-/.gradle/
-/captures/
-*.apk
-*.aab
-*.ap_
-*.dex
-
-# Mac
+# OS
 .DS_Store
-*.swp
-*~
+Thumbs.db
 
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-
-# Linters
-.lint/
-
-# Other
+# Logs
 *.log
-.cxx/
-# Gradle/Android build directories (but not tools/arti-build/)
-**/build/
-!tools/arti-build/
-out/
-gen/
-*~
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Temp files
+*.tmp
 *.swp
-*.lock
-.goosehints
+*.swo
 
-# Google services
-google-services.json
-
-# Keystore files
-*.jks
-*.keystore
-
-# Arti build artifacts (cloned repo and Rust build cache)
-tools/arti-build/.arti-source/
-tools/arti-build/target/
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+```

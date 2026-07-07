@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">bitchat</string>
+    <string name="app_name">NeoN</string>
     <string name="permission_bluetooth_rationale">Требуется разрешение Bluetooth для общения p2p без интернета.</string>
     <string name="permission_location_rationale">Требуется доступ к геопозиции для поиска ближайших устройств по Bluetooth.</string>
     <string name="permission_notification_rationale">Требуется доступ к уведомлениям для оповещения о новых сообщениях.</string>
@@ -24,12 +24,12 @@
     <string name="battery_optimization_not_required">Оптимизация батареи не требуется</string>
     <string name="battery_optimization_checking">Проверка оптимизации батареи</string>
     <string name="battery_optimization_why_disable">Зачем отключать оптимизацию?</string>
-    <string name="battery_optimization_explanation">bitchat работает в фоне для поддержания mesh‑подключений с ближайшими устройствами. Оптимизация батареи может их прервать, что ведёт к задержкам и потерям сообщений.\n\nОтключение гарантирует надёжный обмен p2p.</string>
+    <string name="battery_optimization_explanation">NeoN работает в фоне для поддержания mesh‑подключений с ближайшими устройствами. Оптимизация батареи может их прервать, что ведёт к задержкам и потерям сообщений.\n\nОтключение гарантирует надёжный обмен p2p.</string>
     <string name="battery_optimization_disable_button">Отключить оптимизацию</string>
-    <string name="battery_optimization_note">Примечание: это можно изменить позже в Настройки Android &gt; Приложения &gt; bitchat &gt; Батарея</string>
-    <string name="battery_optimization_not_supported_explanation">На вашем устройстве не требуются настройки оптимизации. bitchat будет работать штатно.</string>
-    <string name="battery_optimization_not_supported_message">На вашем устройстве не требуются настройки оптимизации. bitchat будет работать штатно.</string>
-    <string name="battery_optimization_success_message">bitchat может надёжно работать в фоне</string>
+    <string name="battery_optimization_note">Примечание: это можно изменить позже в Настройки Android &gt; Приложения &gt; NeoN &gt; Батарея</string>
+    <string name="battery_optimization_not_supported_explanation">На вашем устройстве не требуются настройки оптимизации. NeoN будет работать штатно.</string>
+    <string name="battery_optimization_not_supported_message">На вашем устройстве не требуются настройки оптимизации. NeoN будет работать штатно.</string>
+    <string name="battery_optimization_success_message">NeoN может надёжно работать в фоне</string>
     <string name="battery_optimization_benefits">• Надёжная доставка сообщений\n• Поддержка mesh‑связи\n• Фоновая ретрансляция\n• Предотвращение обрывов связи</string>
     <string name="battery_optimization_check_again">Проверить снова</string>
     <string name="battery_optimization_skip">Пропустить пока</string>
@@ -40,7 +40,7 @@
     <string name="notification_summary_more">и ещё %1$d</string>
     <string name="notification_messages_from_people">%1$d сообщений от %2$d людей</string>
     <string name="notification_more_conversations">и ещё %1$d бесед</string>
-    <string name="notification_active_peers_title">👥 bitchatter рядом!</string>
+    <string name="notification_active_peers_title">👥 NeoNter рядом!</string>
     <string name="notification_active_peers_one">Рядом 1 человек</string>
     <string name="notification_active_peers_many">Рядом %1$d человек</string>
     <string name="notification_new_messages">Новые сообщения</string>
@@ -51,8 +51,8 @@
     <string name="notification_new_activity_in">Новая активность в %1$s</string>
     <string name="notification_messages_in">Сообщения в %1$s</string>
     <string name="notification_joined_conversation">%1$s присоединился к беседе</string>
-    <string name="notification_geohash_summary_title_mentions">bitchat — %1$d упоминаний</string>
-    <string name="notification_geohash_summary_title">bitchat — чаты по локациям</string>
+    <string name="notification_geohash_summary_title_mentions">NeoN — %1$d упоминаний</string>
+    <string name="notification_geohash_summary_title">NeoN — чаты по локациям</string>
     <string name="notification_geohash_summary_text">%1$d сообщений из %2$d локаций</string>
     <string name="notification_mesh_mention_title_singular">Упоминание в Mesh‑чате</string>
     <string name="notification_mesh_mention_title_plural">%1$d упоминаний в Mesh‑чате</string>
@@ -97,13 +97,13 @@
     <string name="about_system">система</string>
     <string name="about_light">светлая</string>
     <string name="about_dark">тёмная</string>
-    <string name="about_pow">proof of work</string>
+    <string name="about_pow">доказательство работы</string>
     <string name="about_pow_off">pow выкл</string>
     <string name="about_pow_on">pow вкл</string>
-    <string name="about_pow_tip">добавь proof of work к сообщениям geohash для защиты от спама.</string>
+    <string name="about_pow_tip">доказательство работы для сообщений geohash</string>
     <string name="about_pow_difficulty">сложность: %1$d бит (~%2$s)</string>
     <string name="about_pow_difficulty_attempts">сложность %1$d ≈ ~%2$s попыток хеширования</string>
-    <string name="about_pow_desc_none">proof of work не требуется</string>
+    <string name="about_pow_desc_none">доказательство работы не требуется</string>
     <string name="about_pow_desc_very_low">очень низкая — минимальная защита</string>
     <string name="about_pow_desc_low">низкая — базовая защита</string>
     <string name="about_pow_desc_medium">средняя — хорошая защита</string>
@@ -228,8 +228,8 @@
 
     <string name="location_services_required">Требуются службы локации</string>
     <string name="privacy_first">Приватность прежде всего</string>
-    <string name="location_explanation">bitchat НЕ отслеживает вашу геопозицию.\n\nСлужбы локации нужны для сканирования Bluetooth и функции чата Geohash.</string>
-    <string name="location_needs_for">bitchat нужны службы локации для:</string>
+    <string name="location_explanation">NeoN НЕ отслеживает вашу геопозицию.\n\nСлужбы локации нужны для сканирования Bluetooth и функции чата Geohash.</string>
+    <string name="location_needs_for">NeoN нужны службы локации для:</string>
     <string name="location_needs_bullets">• Сканирования устройств Bluetooth\n• Поиска ближайших пользователей в mesh\n• Функции чата Geohash\n• Без отслеживания и сбора геоданных</string>
     <string name="open_location_settings">Открыть настройки локации</string>
     <string name="check_again">Проверить снова</string>
@@ -237,15 +237,15 @@
     <string name="location_unavailable_explanation">На этом устройстве службы локации недоступны — это необычно.\n\nОни требуются Android для корректной работы сканирования Bluetooth. Иначе невозможно обнаружить ближайших пользователей.</string>
     <string name="checking_location_services">Проверка служб локации…</string>
     <string name="bluetooth_required">Требуется Bluetooth</string>
-    <string name="bluetooth_needs_for">bitchat нужен Bluetooth для:</string>
+    <string name="bluetooth_needs_for">NeoN нужен Bluetooth для:</string>
     <string name="bluetooth_needs_bullets">• Обнаружения ближайших пользователей\n• Создания mesh‑подключений\n• Отправки и получения сообщений\n• Работы без интернета/серверов</string>
     <string name="enable_bluetooth">Включить Bluetooth</string>
     <string name="bluetooth_not_supported">Bluetooth не поддерживается</string>
-    <string name="bluetooth_unsupported_explanation">Это устройство не поддерживает Bluetooth Low Energy (BLE), необходимый для работы bitchat.\n\nBLE нужен для построения mesh и обмена с ближайшими устройствами без интернета.</string>
+    <string name="bluetooth_unsupported_explanation">Это устройство не поддерживает Bluetooth Low Energy (BLE), необходимый для работы NeoN.\n\nBLE нужен для построения mesh и обмена с ближайшими устройствами без интернета.</string>
     <string name="checking_bluetooth_status">Проверка статуса Bluetooth…</string>
     <string name="battery_optimization_detected_title">обнаружена оптимизация батареи</string>
     <string name="battery_optimization_enabled_title">Оптимизация включена</string>
-    <string name="battery_optimization_explanation_short">bitchat должен работать в фоне для mesh; оптимизация может прерывать.</string>
+    <string name="battery_optimization_explanation_short">NeoN должен работать в фоне для mesh; оптимизация может прерывать.</string>
     <string name="benefits_of_disabling">Преимущества отключения</string>
     <string name="battery_benefits_short">• надёжная доставка\n• поддержка связности\n• предотвращает обрывы</string>
     <string name="disable_battery_optimization">Отключить оптимизацию</string>
@@ -262,9 +262,10 @@
     <string name="privacy_bullets">• без трекинга и сбора данных\n• Bluetooth‑mesh чаты полностью оффлайн\n• Geohash‑чаты используют интернет</string>
     <string name="permissions_header">разрешения</string>
     <string name="grant_permissions">Выдать разрешения</string>
-    <string name="location_tracking_warning">bitchat НЕ отслеживает вашу геопозицию</string>
+    <string name="location_tracking_warning">NeoN НЕ отслеживает вашу геопозицию</string>
     <string name="at_symbol">@</string>
-    <string name="app_brand">bitchat/</string>
+    <string name="app_brand">NeoN/</string>
+    <string name="settings_sheet_title">Настройки</string>
     <string name="channel_count_prefix"> · ⧉ </string>
     <string name="geohash_people_header">ЛЮДИ</string>
     <string name="nobody_around">никого рядом…</string>
@@ -307,13 +308,13 @@
     <string name="cd_play_voice">Воспроизвести</string>
     <string name="cd_pause_voice">Пауза</string>
 
-    <string name="perm_nearby_devices_desc">Нужно для поиска пользователей bitchat по Bluetooth</string>
-    <string name="perm_nearby_devices_system">Разрешить bitchat подключаться к ближайшим устройствам</string>
+    <string name="perm_nearby_devices_desc">Нужно для поиска пользователей NeoN по Bluetooth</string>
+    <string name="perm_nearby_devices_system">Разрешить NeoN подключаться к ближайшим устройствам</string>
     <string name="perm_location_desc">Требуется Android для поиска по Bluetooth</string>
-    <string name="perm_location_system">bitchat нужно для сканирования ближайших устройств</string>
+    <string name="perm_location_system">NeoN нужно для сканирования ближайших устройств</string>
     <string name="perm_notifications_desc">Получать уведомления о личных сообщениях</string>
-    <string name="perm_notifications_system">Разрешить bitchat отправлять вам уведомления</string>
-    <string name="perm_battery_desc">Отключить оптимизацию, чтобы bitchat работал в фоне и поддерживал mesh‑связь</string>
+    <string name="perm_notifications_system">Разрешить NeoN отправлять вам уведомления</string>
+    <string name="perm_battery_desc">Отключить оптимизацию, чтобы NeoN работал в фоне и поддерживал mesh‑связь</string>
     <string name="perm_battery_system">Разрешить работу без ограничений батареи</string>
 
     <string name="perm_type_nearby_devices">Ближайшие устройства</string>
@@ -389,4 +390,57 @@
   <string name="verify_success_title">Проверено</string>
   <string name="verify_success_body">Вы проверили %1$s</string>
   <string name="verify_success_system_message">проверен %1$s</string>
+
+    <string name="about_background_title">работа в фоне</string>
+    <string name="about_background_desc">держать mesh активным при закрытом приложении</string>
+    <string name="tor_not_available_in_this_build">Tor недоступен в этой сборке</string>
+    <string name="notification_action_quit_bitchat">Выйти из NeoN</string>
+    <string name="settings_nickname_label">Ваш ник</string>
+    <string name="settings_nickname_hint">введите ник</string>
+    <string name="settings_pow_difficulty">Сложность</string>
+    <string name="settings_tor_network">Сеть Tor</string>
+    <string name="settings_tor_connected">Tor %1$d%%</string>
+    <string name="settings_tor_disconnected">Tor отключён</string>
+    <string name="debug_verbose_hint">логи подключений, маршрутизации и ретрансляции</string>
+    <string name="debug_roles_hint">вкл./выкл. роли и закрытие соединений</string>
+    <string name="debug_rssi_fmt">RSSI: %1$s</string>
+    <string name="background_location_required_title">Фоновая геолокация</string>
+    <string name="background_location_required_subtitle">рекомендуется для стабильного mesh</string>
+    <string name="background_location_explanation">Android рекомендует фоновую геолокацию, чтобы NeoN мог сканировать устройства, когда приложение закрыто.</string>
+    <string name="background_location_settings_tip">В настройках выберите «Разрешить всегда».</string>
+    <string name="background_location_needs_for">Фоновая геолокация нужна для:</string>
+    <string name="background_location_needs_bullets">• сканирования устройств при закрытом приложении\n• переподключения после перезагрузки\n• работы mesh в фоне</string>
+    <string name="background_location_privacy_note">Мы НЕ собираем и не храним вашу геопозицию.</string>
+    <string name="grant_background_location">Разрешить фоновую геолокацию</string>
+    <string name="skip_background_location">Продолжить без фоновой геолокации</string>
+    <string name="perm_background_location_desc">Рекомендуется для сканирования устройств в фоне</string>
+    <string name="perm_background_location_system">Разрешить доступ к геолокации в фоне</string>
+    <string name="perm_type_background_location">Фоновая геолокация</string>
+    <string name="cd_close">Закрыть</string>
+    <string name="location_notes_enable_location">Включить геолокацию</string>
+    <string name="debug_mesh_topology">Топология mesh</string>
+    <string name="debug_no_gossip_yet">пока нет gossip</string>
+    <string name="debug_overall">Всего</string>
+    <string name="debug_per_device">По устройству</string>
+    <string name="debug_per_peer">По пиру</string>
+    <string name="debug_incoming">Входящие</string>
+    <string name="debug_outgoing">Исходящие</string>
+
+    <string name="cd_privacy_protected">Приватность защищена</string>
+    <string name="cd_mining_pow">Майнинг PoW</string>
+    <string name="cd_pow_enabled">PoW включён</string>
+    <string name="cd_proof_of_work">Доказательство работы</string>
+    <string name="pow_mining_ellipsis">майнинг…</string>
+    <string name="pow_label_format">pow: %1$d бит</string>
+    <string name="mesh_service_channel_name">Фоновый сервис Mesh</string>
+    <string name="mesh_service_channel_desc">Поддерживает Bluetooth mesh в фоне</string>
+    <string name="cd_location_notes">Заметки локации</string>
+    <string name="cd_save_current_image">Сохранить изображение</string>
+    <string name="toast_image_saved">Изображение сохранено в «Загрузки»</string>
+    <string name="toast_failed_to_save_image">Не удалось сохранить изображение</string>
+    <string name="cd_image_index_of">Изображение %1$d из %2$d</string>
+    <string name="cd_pick_file">Выбрать файл</string>
+    <string name="action_private_message_title">написать %1$s</string>
+    <string name="action_private_message_subtitle">отправить личное сообщение</string>
+    <string name="debug_tools_desc">инструменты разработчика для диагностики</string>
 </resources>

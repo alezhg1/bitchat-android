@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NeoN Color Palette -->
+    
+    <!-- Основные цвета -->
+    <color name="neon_background_light">#FAFAFA</color>
+    <color name="neon_background_dark">#121212</color>
+    
+    <!-- Акцентный фиолетовый -->
+    <color name="neon_accent_purple">#8A2BE2</color>
+    <color name="neon_accent_purple_light">#9D4EDD</color>
+    <color name="neon_accent_purple_dark">#6A1B9A</color>
+    
+    <!-- Персиковый/Оранжевый для градиентов -->
+    <color name="neon_peach">#FFA500</color>
+    <color name="neon_peach_light">#FFB74D</color>
+    <color name="neon_peach_dark">#F57C00</color>
+    
+    <!-- Текстовые цвета -->
+    <color name="neon_text_primary">#333333</color>
+    <color name="neon_text_secondary">#666666</color>
+    <color name="neon_text_on_accent">#FFFFFF</color>
+    <color name="neon_text_on_dark">#FFFFFF</color>
+    
+    <!-- Золотисто-жёлтый для галочек и акцентов -->
+    <color name="neon_gold">#FFD700</color>
+    <color name="neon_gold_alt">#FFC107</color>
+    
+    <!-- Поверхности -->
+    <color name="neon_surface_light">#FFFFFF</color>
+    <color name="neon_surface_variant_light">#F5F5F7</color>
+    <color name="neon_surface_dark">#1E1E1E</color>
+    <color name="neon_surface_variant_dark">#2D2D2D</color>
+    
+    <!-- Границы и разделители -->
+    <color name="neon_divider_light">#E0E0E0</color>
+    <color name="neon_divider_dark">#424242</color>
+    
+    <!-- Статусы -->
+    <color name="neon_success">#4CAF50</color>
+    <color name="neon_error">#F44336</color>
+    <color name="neon_warning">#FF9800</color>
+</resources>

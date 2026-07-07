@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.bitchat.android"
+    namespace = "com.neon.android"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.bitchat.droid"
+        applicationId = "info.nlogn.chat"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 33
@@ -73,6 +73,9 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    androidResources {
+        localeFilters += listOf("ru")
     }
     packaging {
         resources {
