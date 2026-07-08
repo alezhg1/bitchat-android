@@ -156,4 +156,30 @@ object GroupChatManager {
 
     fun displayName(context: Context, storageKey: String): String =
         getGroupInfo(context, storageKey)?.name ?: bareId(storageKey).take(8)
+
+    fun deleteGroup(
+        context: Context,
+        storageKey: String,
+        state: ChatState,
+        dataManager: DataManager,
+        messageManager: MessageManager,
+        channelManager: com.neon.android.ui.ChannelManager
+    ) {
+        if (!isGroupChannel(storageKey)) return
+        channelManager.leaveChannel(storageKey)
+        messageManager.removeChannelMessages(storageKey)
+        val groups = loadGroups(context).toMutableMap()
+        groups.remove(storageKey)
+        saveGroups(context, groups)
+        dataManager.removeChannelCreator(storageKey)
+        dataManager.removeChannelMembers(storageKey)
+        val joined = state.getJoinedChannelsValue().toMutableSet()
+        joined.remove(storageKey)
+        state.setJoinedChannels(joined)
+        dataManager.saveChannelData(joined, state.getPasswordProtectedChannelsValue())
+        if (state.getCurrentChannelValue() == storageKey) {
+            state.setCurrentChannel(null)
+        }
+        Log.i(TAG, "Deleted group $storageKey")
+    }
 }

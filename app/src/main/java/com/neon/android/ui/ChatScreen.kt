@@ -269,7 +269,11 @@ fun ChatScreen(
             onLocationChannelsClick = { showLocationChannelsSheet = true },
             onChatsClick = { showChatsListSheet = true },
             onMapClick = { showMapScreen = true },
-            onLocationNotesClick = { showLocationNotesSheet = true }
+            onLocationNotesClick = { showLocationNotesSheet = true },
+            onShowGroupQr = {
+                activeGroupForQr = viewModel.currentGroupInfo()
+                showGroupQr = activeGroupForQr != null
+            }
         )
 
         // Divider under header - positioned after status bar + header height
@@ -465,7 +469,8 @@ private fun ChatFloatingHeader(
     onLocationChannelsClick: () -> Unit,
     onChatsClick: () -> Unit = {},
     onMapClick: () -> Unit = {},
-    onLocationNotesClick: () -> Unit
+    onLocationNotesClick: () -> Unit,
+    onShowGroupQr: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val locationManager = remember { com.neon.android.geohash.LocationChannelManager.getInstance(context) }
@@ -496,6 +501,7 @@ private fun ChatFloatingHeader(
                     onLocationChannelsClick = onLocationChannelsClick,
                     onChatsClick = onChatsClick,
                     onMapClick = onMapClick,
+                    onShowGroupQr = onShowGroupQr,
                     onLocationNotesClick = {
                         // Ensure location is loaded before showing sheet
                         locationManager.refreshChannels()

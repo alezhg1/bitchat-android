@@ -501,6 +501,17 @@ class ChatViewModel(
         if (!com.neon.android.mesh.GroupChatManager.isGroupChannel(key)) return null
         return com.neon.android.mesh.GroupChatManager.getGroupInfo(getApplication(), key)
     }
+
+    fun deleteGroupChat(storageKey: String) {
+        com.neon.android.mesh.GroupChatManager.deleteGroup(
+            getApplication(),
+            storageKey,
+            state,
+            dataManager,
+            messageManager,
+            channelManager
+        )
+    }
     
     // MARK: - Private Chat Management (delegated)
     

@@ -58,11 +58,11 @@ fun ChatsListSheet(
   val context = LocalContext.current
   val campName = remember { CampChatManager.getDisplayName(context) }
   val campGeoKey = CampChatManager.geoStorageKey(context)
-  val groupMeta = remember { GroupChatManager.loadGroups(context) }
 
   val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
   val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
   val joinedChannels by viewModel.joinedChannels.collectAsStateWithLifecycle()
+  val groupMeta = remember(joinedChannels) { GroupChatManager.loadGroups(context) }
   val unreadChannels by viewModel.unreadChannelMessages.collectAsStateWithLifecycle()
   val privateChats by viewModel.privateChats.collectAsStateWithLifecycle()
   val unreadPrivate by viewModel.unreadPrivateMessages.collectAsStateWithLifecycle()

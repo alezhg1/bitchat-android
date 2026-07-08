@@ -3,26 +3,22 @@ package com.neon.android.geohash
 import android.content.Context
 import android.util.Log
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.XYTileSource
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import java.io.File
 
 /**
- * Offline-capable terrain basemap (OpenTopoMap) around the camp anchor.
- * Tiles are cached to app storage on first online use, then work without internet.
+ * Offline-capable city-style map (OpenStreetMap) around the camp anchor.
+ * Tiles cache on first online view; pan/zoom via OSMDroid multi-touch.
  */
 object CampOfflineMapProvider {
 
     private const val TAG = "CampOfflineMap"
-
-    /** OpenTopoMap — relief, trails, forests; good for camp orientation. */
-    val topoTileSource = XYTileSource(
-        "OpenTopoMap",
-        10, 18, 256, ".png",
-        arrayOf("https://tile.opentopomap.org/")
-    )
+    const val DEFAULT_ZOOM = 16.0
+    const val MIN_ZOOM = 14.0
+    const val MAX_ZOOM = 19.0
 
     fun configure(context: Context) {
         val ctx = context.applicationContext
@@ -33,51 +29,41 @@ object CampOfflineMapProvider {
     }
 
     fun setupMapView(mapView: MapView) {
-        mapView.setTileSource(topoTileSource)
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.isTilesScaledToDpi = true
         mapView.setBuiltInZoomControls(false)
+        mapView.isHorizontalMapRepetitionEnabled = false
+        mapView.isVerticalMapRepetitionEnabled = false
+        mapView.minZoomLevel = MIN_ZOOM
+        mapView.maxZoomLevel = MAX_ZOOM
+        mapView.controller.setZoom(DEFAULT_ZOOM)
     }
 
-    fun campBoundingBox(anchor: Pair<Double, Double>, deltaDeg: Double = 0.012): BoundingBox {
-        val (lat, lon) = anchor
-        return BoundingBox(
-            lat + deltaDeg,
-            lon + deltaDeg,
-            lat - deltaDeg,
-            lon - deltaDeg
-        )
-    }
-
-    fun centerMap(mapView: MapView, anchor: Pair<Double, Double>, zoom: Double = 15.0) {
-        mapView.controller.setZoom(zoom)
+    fun centerMap(mapView: MapView, anchor: Pair<Double, Double>, zoom: Double = DEFAULT_ZOOM) {
+        mapView.controller.setZoom(zoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
         mapView.controller.setCenter(GeoPoint(anchor.first, anchor.second))
     }
 
-    fun fitUsers(mapView: MapView, anchor: Pair<Double, Double>?, points: List<Pair<Double, Double>>) {
-        val all = buildList {
-            anchor?.let { add(it) }
-            addAll(points)
-        }
-        if (all.isEmpty()) return
-        if (all.size == 1) {
-            centerMap(mapView, all.first(), 16.0)
-            return
-        }
-        val lats = all.map { it.first }
-        val lons = all.map { it.second }
-        val pad = 0.0015
-        val box = BoundingBox(
-            lats.max() + pad,
-            lons.max() + pad,
-            lats.min() - pad,
-            lons.min() - pad
-        )
-        mapView.zoomToBoundingBox(box, true)
+    fun zoomIn(mapView: MapView) {
+        mapView.controller.zoomIn()
+    }
+
+    fun zoomOut(mapView: MapView) {
+        mapView.controller.zoomOut()
+    }
+
+    fun fitCampArea(mapView: MapView, anchor: Pair<Double, Double>) {
+        val (lat, lon) = anchor
+        val delta = 0.004
+        val box = BoundingBox(lat + delta, lon + delta, lat - delta, lon - delta)
+        mapView.zoomToBoundingBox(box, false)
+        val z = mapView.zoomLevelDouble
+        if (z < MIN_ZOOM) mapView.controller.setZoom(DEFAULT_ZOOM)
     }
 
     fun prefetchCampTiles(context: Context, anchor: Pair<Double, Double>) {
         configure(context)
-        Log.d(TAG, "Map configured for camp at ${anchor.first}, ${anchor.second} — tiles cache on first online view")
+        Log.d(TAG, "OSM map ready for ${anchor.first}, ${anchor.second}")
     }
 }

@@ -123,7 +123,7 @@ fun MapScreen(
         campAnchor = campAnchor,
         modifier = Modifier
           .fillMaxWidth()
-          .weight(0.52f)
+          .height(260.dp)
           .padding(horizontal = 8.dp, vertical = 4.dp)
       )
 
@@ -149,7 +149,7 @@ fun MapScreen(
       LazyColumn(
         modifier = Modifier
           .fillMaxWidth()
-          .weight(0.48f)
+          .weight(1f)
           .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = PaddingValues(bottom = 16.dp)

@@ -230,17 +230,20 @@ fun ChatHeaderContent(
     onChatsClick: () -> Unit,
     onLocationChannelsClick: () -> Unit,
     onLocationNotesClick: () -> Unit,
-    onMapClick: () -> Unit = {}
+    onMapClick: () -> Unit = {},
+    onShowGroupQr: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
     when {
         currentChannel != null -> {
-            // Channel header
             ChannelHeader(
                 channel = currentChannel,
+                viewModel = viewModel,
                 onBackClick = onBackClick,
                 onLeaveChannel = { viewModel.leaveChannel(currentChannel) },
+                onDeleteGroup = { viewModel.deleteGroupChat(currentChannel) },
+                onShowGroupQr = onShowGroupQr,
                 onSidebarClick = onSidebarClick
             )
         }
@@ -269,11 +272,22 @@ fun ChatHeaderContent(
 @Composable
 private fun ChannelHeader(
     channel: String,
+    viewModel: ChatViewModel,
     onBackClick: () -> Unit,
     onLeaveChannel: () -> Unit,
+    onDeleteGroup: () -> Unit,
+    onShowGroupQr: () -> Unit,
     onSidebarClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isGroup = com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)
+    val title = when {
+        isGroup -> com.neon.android.mesh.GroupChatManager.displayName(context, channel)
+        channel.startsWith("#") -> channel.removePrefix("#")
+        else -> channel
+    }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     
     Box(modifier = Modifier.fillMaxWidth()) {
         // Back button - positioned all the way to the left with minimal margin
@@ -308,25 +322,45 @@ private fun ChannelHeader(
         
         // Title - perfectly centered regardless of other elements
         Text(
-            text = stringResource(R.string.chat_channel_prefix, channel),
+            text = if (isGroup) title else stringResource(R.string.chat_channel_prefix, title),
             style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFFFF9500), // Orange to match input field
+            color = Color(0xFFFF9500),
             modifier = Modifier
                 .align(Alignment.Center)
                 .clickable { onSidebarClick() }
         )
         
-        // Leave button - positioned on the right
-        TextButton(
-            onClick = onLeaveChannel,
-            modifier = Modifier.align(Alignment.CenterEnd)
-        ) {
-            Text(
-                text = stringResource(R.string.chat_leave),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Red
-            )
+        Row(modifier = Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+            if (isGroup) {
+                IconButton(onClick = onShowGroupQr, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.QrCode2, contentDescription = "QR чата", tint = colorScheme.primary)
+                }
+            }
+            TextButton(onClick = { if (isGroup) showDeleteConfirm = true else onLeaveChannel() }) {
+                Text(
+                    text = if (isGroup) "Удалить" else stringResource(R.string.chat_leave),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Red
+                )
+            }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Удалить чат «$title»?") },
+            text = { Text("Группа исчезнет из списка на этом устройстве.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    onDeleteGroup()
+                }) { Text("Удалить", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Отмена") }
+            }
+        )
     }
 }
 
@@ -484,7 +518,9 @@ private fun CurrentChatBadge(
     val activeChannel = currentChannel
     
     val (badgeText, badgeColor) = when {
-        activeChannel != null -> activeChannel to Color(0xFFFF9500)
+        activeChannel != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(activeChannel) ->
+            com.neon.android.mesh.GroupChatManager.displayName(context, activeChannel) to Color(0xFFFF9500)
+        activeChannel != null -> activeChannel.removePrefix("#") to Color(0xFFFF9500)
         CampChatManager.isCampChannel(context, locationSelection) ->
             CampChatManager.getDisplayName(context) to ChatColors.meshAccent
         locationSelection is com.neon.android.geohash.ChannelID.Location -> {
