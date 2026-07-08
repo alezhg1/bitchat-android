@@ -118,10 +118,9 @@ fun MapScreen(
         intervalMin = (LocationSharingService.SHARE_INTERVAL_MS / 60_000).toInt()
       )
 
-      MeshNetworkMap(
-        users = displayUsers,
+      CampTerrainMapView(
+        users = userLocations.values.toList(),
         campAnchor = campAnchor,
-        myPeerId = myPeerId,
         modifier = Modifier
           .fillMaxWidth()
           .weight(0.52f)

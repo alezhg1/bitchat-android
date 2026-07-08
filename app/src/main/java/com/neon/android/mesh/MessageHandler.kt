@@ -414,12 +414,15 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
                 Log.w(TAG, "⚠️ FILE_TRANSFER decode failed (broadcast) from ${peerID.take(8)} payloadSize=${packet.payload.size}")
             }
 
-            // Fallback: plain text
+            // Fallback: plain text (supports [GRP:id]:payload for user groups)
+            val rawContent = String(packet.payload, Charsets.UTF_8)
+            val groupParsed = com.neon.android.mesh.GroupChatManager.parseMeshPayload(rawContent)
             val message = BitchatMessage(
                 sender = delegate?.getPeerNickname(peerID) ?: "unknown",
-                content = String(packet.payload, Charsets.UTF_8),
+                content = groupParsed?.second ?: rawContent,
                 senderPeerID = peerID,
-                timestamp = Date(packet.timestamp.toLong())
+                timestamp = Date(packet.timestamp.toLong()),
+                channel = groupParsed?.first
             )
             delegate?.onMessageReceived(message)
         } catch (e: Exception) {

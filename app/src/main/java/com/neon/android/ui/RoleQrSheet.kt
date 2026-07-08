@@ -99,7 +99,7 @@ fun RoleQrScannerSheet(
                     .height(320.dp),
                 contentAlignment = Alignment.Center
             ) {
-                RoleQrCameraScanner(
+                QrCameraScannerBox(
                     modifier = Modifier.fillMaxSize(),
                     onScan = { raw ->
                         val granted = roleKeyManager.grantFromQrPayload(raw)
@@ -191,7 +191,7 @@ fun RoleQrDisplaySheet(
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-private fun RoleQrCameraScanner(
+fun QrCameraScannerBox(
     modifier: Modifier = Modifier,
     onScan: (String) -> Unit
 ) {

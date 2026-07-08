@@ -388,7 +388,9 @@ private fun MainHeader(
                 val channelName = currentChannel
                 val locationChannel = selectedLocationChannel
                 val subtitle = when {
-                    channelName != null -> "Канал · ${channelName.removePrefix("#")}"
+                    channelName != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channelName) ->
+                        "Группа · ${com.neon.android.mesh.GroupChatManager.displayName(context, channelName)}"
+                    channelName != null -> "Канал · ${channelName.removePrefix("#").removePrefix("grp:")}"
                     com.neon.android.geohash.CampChatManager.isCampChannel(context, locationChannel) -> {
                         val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
                         if (isConnected && count > 0) {

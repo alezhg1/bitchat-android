@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neon.android.geohash.CampChatManager
-import com.neon.android.geohash.ChannelID
+import com.neon.android.mesh.GroupChatManager
 import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
 import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
 import com.neon.android.core.ui.component.sheet.BitchatSheetTitle
@@ -31,6 +34,7 @@ data class ChatListItem(
 
 enum class ChatListItemType {
   CAMP,
+  GROUP,
   CHANNEL,
   PRIVATE
 }
@@ -45,6 +49,8 @@ fun ChatsListSheet(
   onSelectChannel: (String) -> Unit,
   onSelectPrivate: (String) -> Unit = {},
   onAdvancedLocation: () -> Unit = {},
+  onCreateGroup: () -> Unit = {},
+  onJoinGroupQr: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   if (!isPresented) return
@@ -52,6 +58,7 @@ fun ChatsListSheet(
   val context = LocalContext.current
   val campName = remember { CampChatManager.getDisplayName(context) }
   val campGeoKey = CampChatManager.geoStorageKey(context)
+  val groupMeta = remember { GroupChatManager.loadGroups(context) }
 
   val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
   val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
@@ -69,20 +76,35 @@ fun ChatsListSheet(
       ChatListItem(
         id = "camp",
         title = campName,
-        subtitle = "Группа всего лагеря · Bluetooth mesh + геоканал",
+        subtitle = "Общий чат лагеря · mesh",
         type = ChatListItemType.CAMP,
         accentColor = ChatColors.meshAccent,
         unreadCount = campUnread
       )
     )
     joinedChannels
-      .filter { it != CampChatManager.CAMP_MESH_CHANNEL }
+      .filter { GroupChatManager.isGroupChannel(it) }
+      .forEach { key ->
+        val info = groupMeta[key]
+        add(
+          ChatListItem(
+            id = key,
+            title = info?.name ?: GroupChatManager.bareId(key),
+            subtitle = "Группа · присоединение по QR · mesh",
+            type = ChatListItemType.GROUP,
+            accentColor = ChatColors.channelAccent,
+            unreadCount = unreadChannels[key] ?: 0
+          )
+        )
+      }
+    joinedChannels
+      .filter { !GroupChatManager.isGroupChannel(it) && it != CampChatManager.CAMP_MESH_CHANNEL }
       .forEach { channel ->
         add(
           ChatListItem(
             id = channel,
             title = channel.removePrefix("#"),
-            subtitle = "Дополнительный групповой чат",
+            subtitle = "Канал",
             type = ChatListItemType.CHANNEL,
             accentColor = ChatColors.channelAccent,
             unreadCount = unreadChannels[channel] ?: 0
@@ -115,17 +137,42 @@ fun ChatsListSheet(
       title = { BitchatSheetTitle("Чаты") }
     )
 
-    LazyColumn(
+    Row(
       modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 12.dp, vertical = 8.dp),
-      verticalArrangement = Arrangement.spacedBy(6.dp)
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      FilledTonalButton(
+        onClick = onCreateGroup,
+        modifier = Modifier.weight(1f)
+      ) {
+        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text("Создать")
+      }
+      OutlinedButton(
+        onClick = { onJoinGroupQr() },
+        modifier = Modifier.weight(1f)
+      ) {
+        Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text("По QR")
+      }
+    }
+
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 12.dp, vertical = 4.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp),
+      contentPadding = PaddingValues(bottom = 16.dp)
     ) {
       items(chatItems, key = { it.id }) { item ->
         val isActive = when (item.type) {
           ChatListItemType.CAMP ->
             currentChannel == null && CampChatManager.isCampChannel(context, selectedLocationChannel)
-          ChatListItemType.CHANNEL -> currentChannel == item.id
+          ChatListItemType.GROUP, ChatListItemType.CHANNEL -> currentChannel == item.id
           ChatListItemType.PRIVATE -> false
         }
         ChatListRow(
@@ -137,7 +184,7 @@ fun ChatsListSheet(
                 onSelectCamp()
                 onDismiss()
               }
-              ChatListItemType.CHANNEL -> {
+              ChatListItemType.GROUP, ChatListItemType.CHANNEL -> {
                 onSelectChannel(item.id)
                 onDismiss()
               }

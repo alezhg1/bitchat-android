@@ -477,6 +477,30 @@ class ChatViewModel(
         channelManager.leaveChannel(channel)
         meshService.sendMessage("left $channel")
     }
+
+    fun createGroupChat(name: String): com.neon.android.mesh.GroupChatInfo {
+        val ctx = getApplication<android.app.Application>()
+        val info = com.neon.android.mesh.GroupChatManager.createGroup(
+            ctx, name, meshService.myPeerID, state, dataManager
+        )
+        channelManager.switchToChannel(info.storageKey)
+        return info
+    }
+
+    fun joinGroupFromQr(raw: String): com.neon.android.mesh.GroupChatInfo? {
+        val ctx = getApplication<android.app.Application>()
+        val info = com.neon.android.mesh.GroupChatManager.joinFromQr(
+            raw, meshService.myPeerID, state, dataManager
+        ) ?: return null
+        channelManager.switchToChannel(info.storageKey)
+        return info
+    }
+
+    fun currentGroupInfo(): com.neon.android.mesh.GroupChatInfo? {
+        val key = state.getCurrentChannelValue() ?: return null
+        if (!com.neon.android.mesh.GroupChatManager.isGroupChannel(key)) return null
+        return com.neon.android.mesh.GroupChatManager.getGroupInfo(getApplication(), key)
+    }
     
     // MARK: - Private Chat Management (delegated)
     
@@ -698,6 +722,12 @@ class ChatViewModel(
                 if (currentChannelValue != null) {
                     channelManager.addChannelMessage(currentChannelValue, message, meshService.myPeerID)
 
+                    val wireContent = if (com.neon.android.mesh.GroupChatManager.isGroupChannel(currentChannelValue)) {
+                        com.neon.android.mesh.GroupChatManager.wrapForMesh(currentChannelValue, content)
+                    } else {
+                        content
+                    }
+
                     // Check if encrypted channel
                     if (channelManager.hasChannelKey(currentChannelValue)) {
                         channelManager.sendEncryptedChannelMessage(
@@ -707,15 +737,14 @@ class ChatViewModel(
                             state.getNicknameValue(),
                             meshService.myPeerID,
                             onEncryptedPayload = { encryptedData ->
-                                // This would need proper mesh service integration
-                                meshService.sendMessage(content, mentions, currentChannelValue)
+                                meshService.sendMessage(wireContent, mentions, currentChannelValue)
                             },
                             onFallback = {
-                                meshService.sendMessage(content, mentions, currentChannelValue)
+                                meshService.sendMessage(wireContent, mentions, currentChannelValue)
                             }
                         )
                     } else {
-                        meshService.sendMessage(content, mentions, currentChannelValue)
+                        meshService.sendMessage(wireContent, mentions, currentChannelValue)
                     }
                 } else {
                     messageManager.addMessage(message)

@@ -139,6 +139,9 @@ dependencies {
     // Only included in tor flavor to reduce APK size for standard builds
     // Note: AAR is kept in libs/ for reference, but libraries loaded from jniLibs/
 
+    // OSM offline terrain map
+    implementation(libs.osmdroid.android)
+
     // Google Play Services Location
     implementation(libs.gms.location)
 

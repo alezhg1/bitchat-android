@@ -71,6 +71,10 @@ fun ChatScreen(
     var showLocationChannelsSheet by remember { mutableStateOf(false) }
     var showChatsListSheet by remember { mutableStateOf(false) }
     var showMapScreen by remember { mutableStateOf(false) }
+    var showCreateGroupSheet by remember { mutableStateOf(false) }
+    var showJoinGroupQr by remember { mutableStateOf(false) }
+    var showGroupQr by remember { mutableStateOf(false) }
+    var activeGroupForQr by remember { mutableStateOf<com.neon.android.mesh.GroupChatInfo?>(null) }
     var showLocationNotesSheet by remember { mutableStateOf(false) }
     var showUserSheet by remember { mutableStateOf(false) }
     var selectedUserForSheet by remember { mutableStateOf("") }
@@ -361,6 +365,26 @@ fun ChatScreen(
         onSelectCampChat = { viewModel.switchToCampChat() },
         onSelectLocationChat = { showLocationChannelsSheet = true },
         onSelectChannelChat = { viewModel.switchToChannel(it) },
+        onOpenCreateGroup = { showCreateGroupSheet = true },
+        onOpenJoinGroupQr = { showJoinGroupQr = true },
+        showCreateGroupSheet = showCreateGroupSheet,
+        onCreateGroupSheetDismiss = { showCreateGroupSheet = false },
+        onCreateGroup = { name ->
+            val info = viewModel.createGroupChat(name)
+            activeGroupForQr = info
+            showCreateGroupSheet = false
+            showGroupQr = true
+        },
+        showJoinGroupQr = showJoinGroupQr,
+        onJoinGroupQrDismiss = { showJoinGroupQr = false },
+        onJoinGroupQr = { raw -> viewModel.joinGroupFromQr(raw) != null },
+        showGroupQr = showGroupQr,
+        activeGroupForQr = activeGroupForQr,
+        onGroupQrDismiss = { showGroupQr = false },
+        onShowGroupQr = {
+            activeGroupForQr = viewModel.currentGroupInfo()
+            showGroupQr = activeGroupForQr != null
+        },
         showMapScreen = showMapScreen,
         onMapScreenDismiss = { showMapScreen = false },
         onLogout = onLogout,
@@ -518,6 +542,18 @@ private fun ChatDialogs(
     onSelectCampChat: () -> Unit = {},
     onSelectLocationChat: () -> Unit = {},
     onSelectChannelChat: (String) -> Unit = {},
+    onOpenCreateGroup: () -> Unit = {},
+    onOpenJoinGroupQr: () -> Unit = {},
+    showCreateGroupSheet: Boolean = false,
+    onCreateGroupSheetDismiss: () -> Unit = {},
+    onCreateGroup: (String) -> Unit = {},
+    showJoinGroupQr: Boolean = false,
+    onJoinGroupQrDismiss: () -> Unit = {},
+    onJoinGroupQr: (String) -> Boolean = { false },
+    showGroupQr: Boolean = false,
+    activeGroupForQr: com.neon.android.mesh.GroupChatInfo? = null,
+    onGroupQrDismiss: () -> Unit = {},
+    onShowGroupQr: () -> Unit = {},
     showMapScreen: Boolean = false,
     onMapScreenDismiss: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -566,7 +602,27 @@ private fun ChatDialogs(
         onSelectCamp = onSelectCampChat,
         onSelectChannel = onSelectChannelChat,
         onSelectPrivate = { viewModel.showPrivateChatSheet(it) },
-        onAdvancedLocation = onSelectLocationChat
+        onAdvancedLocation = onSelectLocationChat,
+        onCreateGroup = onOpenCreateGroup,
+        onJoinGroupQr = onOpenJoinGroupQr
+    )
+
+    CreateGroupSheet(
+        isPresented = showCreateGroupSheet,
+        onDismiss = onCreateGroupSheetDismiss,
+        onCreate = onCreateGroup
+    )
+
+    GroupQrJoinScannerSheet(
+        isPresented = showJoinGroupQr,
+        onDismiss = onJoinGroupQrDismiss,
+        onScanRaw = onJoinGroupQr
+    )
+
+    GroupQrDisplaySheet(
+        isPresented = showGroupQr,
+        group = activeGroupForQr,
+        onDismiss = onGroupQrDismiss
     )
 
     // Map screen for admin/teacher
