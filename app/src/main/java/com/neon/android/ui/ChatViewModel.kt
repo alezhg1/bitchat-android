@@ -327,6 +327,13 @@ class ChatViewModel(
         com.neon.android.geohash.LocationSharingService
             .getInstance(getApplication())
             .start(meshService, viewModelScope)
+
+        com.neon.android.geohash.CampChatManager.ensureCampAnchor(getApplication())
+        switchToCampChat()
+        try {
+            com.neon.android.geohash.LocationChannelManager.getInstance(getApplication())
+                .enableLocationChannels()
+        } catch (_: Exception) { }
     }
     
     override fun onCleared() {
@@ -443,12 +450,20 @@ class ChatViewModel(
     }
 
     fun switchToMeshChat() {
+        switchToCampChat()
+    }
+
+    /** Primary group chat for the whole camp (BLE mesh + Nostr geohash). */
+    fun switchToCampChat() {
         switchToChannel(null)
-        try {
-            com.neon.android.geohash.LocationChannelManager
-                .getInstance(getApplication())
-                .select(com.neon.android.geohash.ChannelID.Mesh)
-        } catch (_: Exception) { }
+        val ctx = getApplication<android.app.Application>()
+        if (!com.neon.android.geohash.CampChatManager.selectCampChannel(ctx)) {
+            try {
+                com.neon.android.geohash.LocationChannelManager.getInstance(ctx)
+                    .select(com.neon.android.geohash.ChannelID.Mesh)
+            } catch (_: Exception) { }
+        }
+        joinChannel(com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL)
     }
     
     fun leaveChannel(channel: String) {
@@ -559,14 +574,23 @@ class ChatViewModel(
             val selectedLocationForCommand = state.selectedLocationChannel.value
             commandProcessor.processCommand(content, meshService, meshService.myPeerID, { messageContent, mentions, channel ->
                 if (selectedLocationForCommand is com.neon.android.geohash.ChannelID.Location) {
-                    // Route command-generated public messages via Nostr in geohash channels
+                val ctx = getApplication<android.app.Application>()
+                if (com.neon.android.geohash.CampChatManager.isCampChannel(ctx, selectedLocationForCommand)) {
+                    meshService.sendMessage(messageContent, mentions, null)
+                    com.neon.android.geohash.CampChatManager.getCampChannel(ctx)?.let { ch ->
+                        geohashViewModel.sendGeohashMessage(
+                            messageContent, ch, meshService.myPeerID, state.getNicknameValue()
+                        )
+                    }
+                } else {
                     geohashViewModel.sendGeohashMessage(
                         messageContent,
                         selectedLocationForCommand.channel,
                         meshService.myPeerID,
                         state.getNicknameValue()
                     )
-                } else {
+                }
+            } else {
                     // Default: route via mesh
                     meshService.sendMessage(messageContent, mentions, channel)
                 }
@@ -613,11 +637,45 @@ class ChatViewModel(
                 router.sendPrivate(messageContent, peerID, recipientNicknameParam, messageId)
             }
         } else {
-            // Check if we're in a location channel
+            val ctx = getApplication<android.app.Application>()
             val selectedLocationChannel = state.selectedLocationChannel.value
-            if (selectedLocationChannel is com.neon.android.geohash.ChannelID.Location) {
-                // Send to geohash channel via Nostr ephemeral event
-                geohashViewModel.sendGeohashMessage(content, selectedLocationChannel.channel, meshService.myPeerID, state.getNicknameValue())
+            val campActive = com.neon.android.geohash.CampChatManager.isCampActive(
+                ctx,
+                selectedLocationChannel,
+                currentChannelValue
+            )
+
+            if (campActive) {
+                val campChannel = com.neon.android.geohash.CampChatManager.getCampChannel(ctx)
+                val message = BitchatMessage(
+                    sender = state.getNicknameValue() ?: meshService.myPeerID,
+                    content = content,
+                    timestamp = Date(),
+                    isRelay = false,
+                    senderPeerID = meshService.myPeerID,
+                    mentions = if (mentions.isNotEmpty()) mentions else null,
+                    channel = com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL
+                )
+                messageManager.addMessage(message)
+                meshService.sendMessage(content, mentions, null)
+                campChannel?.let { channel ->
+                    com.neon.android.geohash.CampChatManager.geoStorageKey(ctx)?.let { geoKey ->
+                        messageManager.addChannelMessage(geoKey, message, meshService.myPeerID)
+                    }
+                    geohashViewModel.sendGeohashMessage(
+                        content,
+                        channel,
+                        meshService.myPeerID,
+                        state.getNicknameValue()
+                    )
+                }
+            } else if (selectedLocationChannel is com.neon.android.geohash.ChannelID.Location) {
+                geohashViewModel.sendGeohashMessage(
+                    content,
+                    selectedLocationChannel.channel,
+                    meshService.myPeerID,
+                    state.getNicknameValue()
+                )
             } else {
                 // Send public/channel message via mesh
                 val message = BitchatMessage(

@@ -92,24 +92,29 @@ fun ChatScreen(
     // Get location channel info for timeline switching
     val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     // Determine what messages to show based on current context (unified timelines)
-    // Legacy private chat timeline removed - private chats now exclusively use PrivateChatSheet
     val displayMessages = when {
         currentChannel != null -> channelMessages[currentChannel] ?: emptyList()
         else -> {
             val locationChannel = selectedLocationChannel
-            if (locationChannel is com.neon.android.geohash.ChannelID.Location) {
+            if (com.neon.android.geohash.CampChatManager.isCampChannel(context, locationChannel)) {
+                val geoKey = com.neon.android.geohash.CampChatManager.geoStorageKey(context)
+                val geo = geoKey?.let { channelMessages[it] } ?: emptyList()
+                com.neon.android.geohash.CampChatManager.mergeCampTimeline(messages, geo)
+            } else if (locationChannel is com.neon.android.geohash.ChannelID.Location) {
                 val geokey = "geo:${locationChannel.channel.geohash}"
                 channelMessages[geokey] ?: emptyList()
             } else {
-                messages // Mesh timeline
+                messages
             }
         }
     }
 
-    // Determine whether to show media buttons (only hide in geohash location chats)
     val showMediaButtons = when {
         currentChannel != null -> true
+        com.neon.android.geohash.CampChatManager.isCampChannel(context, selectedLocationChannel) -> true
         else -> selectedLocationChannel !is com.neon.android.geohash.ChannelID.Location
     }
 
@@ -353,7 +358,7 @@ fun ChatScreen(
         onMeshPeerListDismiss = viewModel::hideMeshPeerList,
         showChatsListSheet = showChatsListSheet,
         onChatsListSheetDismiss = { showChatsListSheet = false },
-        onSelectMeshChat = { viewModel.switchToMeshChat() },
+        onSelectCampChat = { viewModel.switchToCampChat() },
         onSelectLocationChat = { showLocationChannelsSheet = true },
         onSelectChannelChat = { viewModel.switchToChannel(it) },
         showMapScreen = showMapScreen,
@@ -510,7 +515,7 @@ private fun ChatDialogs(
     onMeshPeerListDismiss: () -> Unit,
     showChatsListSheet: Boolean = false,
     onChatsListSheetDismiss: () -> Unit = {},
-    onSelectMeshChat: () -> Unit = {},
+    onSelectCampChat: () -> Unit = {},
     onSelectLocationChat: () -> Unit = {},
     onSelectChannelChat: (String) -> Unit = {},
     showMapScreen: Boolean = false,
@@ -558,10 +563,10 @@ private fun ChatDialogs(
         isPresented = showChatsListSheet,
         onDismiss = onChatsListSheetDismiss,
         viewModel = viewModel,
-        onSelectMesh = onSelectMeshChat,
-        onSelectLocation = onSelectLocationChat,
+        onSelectCamp = onSelectCampChat,
         onSelectChannel = onSelectChannelChat,
-        onSelectPrivate = { viewModel.showPrivateChatSheet(it) }
+        onSelectPrivate = { viewModel.showPrivateChatSheet(it) },
+        onAdvancedLocation = onSelectLocationChat
     )
 
     // Map screen for admin/teacher

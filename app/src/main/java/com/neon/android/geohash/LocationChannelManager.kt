@@ -327,6 +327,7 @@ class LocationChannelManager private constructor(private val context: Context) {
         lastLocation = location
         _isLoadingLocation.value = false
         computeChannels(location)
+        CampChatManager.onLocationUpdate(context, location)
         reverseGeocodeIfNeeded(location)
     }
 

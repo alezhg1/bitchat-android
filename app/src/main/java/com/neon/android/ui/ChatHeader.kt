@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neon.android.core.ui.utils.singleOrTripleClickable
+import com.neon.android.geohash.CampChatManager
 import com.neon.android.ui.theme.ChatColors
 import com.neon.android.ui.theme.ChatAvatar
 import androidx.compose.foundation.Canvas
@@ -385,9 +386,17 @@ private fun MainHeader(
                     maxLines = 1
                 )
                 val subtitle = when {
-                    currentChannel != null -> "Канал · $currentChannel"
+                    currentChannel != null -> "Канал · ${currentChannel.removePrefix("#")}"
+                    com.neon.android.geohash.CampChatManager.isCampChannel(context, selectedLocationChannel) -> {
+                        val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
+                        if (isConnected && count > 0) {
+                            "${com.neon.android.geohash.CampChatManager.getDisplayName(context)} · $count в сети"
+                        } else {
+                            "${com.neon.android.geohash.CampChatManager.getDisplayName(context)} · ожидание участников"
+                        }
+                    }
                     selectedLocationChannel is com.neon.android.geohash.ChannelID.Location ->
-                        "Локационный чат · ${(selectedLocationChannel as com.neon.android.geohash.ChannelID.Location).channel.geohash.take(8)}…"
+                        "Локационный канал · ${selectedLocationChannel.channel.geohash.take(8)}…"
                     else -> {
                         val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
                         if (isConnected && count > 0) "$count в сети" else "Ожидание подключений"
@@ -462,17 +471,20 @@ private fun CurrentChatBadge(
     viewModel: ChatViewModel,
     onClick: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val selectedChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
     val teleported by viewModel.isTeleported.collectAsStateWithLifecycle()
     val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
     
     val (badgeText, badgeColor) = when {
         currentChannel != null -> currentChannel!! to Color(0xFFFF9500)
+        CampChatManager.isCampChannel(context, selectedChannel) ->
+            CampChatManager.getDisplayName(context) to ChatColors.meshAccent
         selectedChannel is com.neon.android.geohash.ChannelID.Location -> {
-            val geohash = (selectedChannel as com.neon.android.geohash.ChannelID.Location).channel.geohash
+            val geohash = selectedChannel.channel.geohash
             "Локация" to Color(0xFF00C851)
         }
-        else -> "Общий" to Color(0xFF007AFF)
+        else -> CampChatManager.getDisplayName(context) to ChatColors.meshAccent
     }
     
     Button(

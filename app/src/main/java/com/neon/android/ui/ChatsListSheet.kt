@@ -4,18 +4,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neon.android.geohash.CampChatManager
 import com.neon.android.geohash.ChannelID
 import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
 import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
@@ -33,8 +30,7 @@ data class ChatListItem(
 )
 
 enum class ChatListItemType {
-  MESH,
-  LOCATION,
+  CAMP,
   CHANNEL,
   PRIVATE
 }
@@ -45,13 +41,17 @@ fun ChatsListSheet(
   isPresented: Boolean,
   onDismiss: () -> Unit,
   viewModel: ChatViewModel,
-  onSelectMesh: () -> Unit,
-  onSelectLocation: () -> Unit,
+  onSelectCamp: () -> Unit,
   onSelectChannel: (String) -> Unit,
   onSelectPrivate: (String) -> Unit = {},
+  onAdvancedLocation: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   if (!isPresented) return
+
+  val context = LocalContext.current
+  val campName = remember { CampChatManager.getDisplayName(context) }
+  val campGeoKey = CampChatManager.geoStorageKey(context)
 
   val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
   val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
@@ -62,53 +62,33 @@ fun ChatsListSheet(
   val peerNicknames by viewModel.peerNicknames.collectAsStateWithLifecycle()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+  val campUnread = campGeoKey?.let { unreadChannels[it] ?: 0 } ?: 0
+
   val chatItems = buildList {
     add(
       ChatListItem(
-        id = "mesh",
-        title = "Общий чат",
-        subtitle = "Сообщения через mesh-сеть",
-        type = ChatListItemType.MESH,
-        accentColor = ChatColors.meshAccent
+        id = "camp",
+        title = campName,
+        subtitle = "Группа всего лагеря · Bluetooth mesh + геоканал",
+        type = ChatListItemType.CAMP,
+        accentColor = ChatColors.meshAccent,
+        unreadCount = campUnread
       )
     )
-    when (val loc = selectedLocationChannel) {
-      is ChannelID.Location -> {
+    joinedChannels
+      .filter { it != CampChatManager.CAMP_MESH_CHANNEL }
+      .forEach { channel ->
         add(
           ChatListItem(
-            id = "geo:${loc.channel.geohash}",
-            title = "Локационный чат",
-            subtitle = loc.channel.geohash,
-            type = ChatListItemType.LOCATION,
-            accentColor = ChatColors.locationAccent,
-            unreadCount = unreadChannels["geo:${loc.channel.geohash}"] ?: 0
+            id = channel,
+            title = channel.removePrefix("#"),
+            subtitle = "Дополнительный групповой чат",
+            type = ChatListItemType.CHANNEL,
+            accentColor = ChatColors.channelAccent,
+            unreadCount = unreadChannels[channel] ?: 0
           )
         )
       }
-      else -> {
-        add(
-          ChatListItem(
-            id = "location_picker",
-            title = "Локационные чаты",
-            subtitle = "Выбрать чат по геолокации",
-            type = ChatListItemType.LOCATION,
-            accentColor = ChatColors.locationAccent
-          )
-        )
-      }
-    }
-    joinedChannels.forEach { channel ->
-      add(
-        ChatListItem(
-          id = channel,
-          title = channel,
-          subtitle = "Групповой чат",
-          type = ChatListItemType.CHANNEL,
-          accentColor = ChatColors.channelAccent,
-          unreadCount = unreadChannels[channel] ?: 0
-        )
-      )
-    }
     privateChats.keys.sorted().forEach { peerId ->
       val title = peerNicknames[peerId] ?: peerId.take(12)
       val preview = privateChats[peerId]?.lastOrNull()?.content?.take(40) ?: "Личная переписка"
@@ -143,25 +123,19 @@ fun ChatsListSheet(
     ) {
       items(chatItems, key = { it.id }) { item ->
         val isActive = when (item.type) {
-          ChatListItemType.MESH -> currentChannel == null && selectedLocationChannel is ChannelID.Mesh
-          ChatListItemType.LOCATION -> item.id.startsWith("geo:") &&
-            selectedLocationChannel is ChannelID.Location &&
-            currentChannel == null
+          ChatListItemType.CAMP ->
+            currentChannel == null && CampChatManager.isCampChannel(context, selectedLocationChannel)
           ChatListItemType.CHANNEL -> currentChannel == item.id
           ChatListItemType.PRIVATE -> false
-          else -> false
         }
         ChatListRow(
           item = item,
           isActive = isActive,
           onClick = {
             when (item.type) {
-              ChatListItemType.MESH -> {
-                onSelectMesh()
+              ChatListItemType.CAMP -> {
+                onSelectCamp()
                 onDismiss()
-              }
-              ChatListItemType.LOCATION -> {
-                if (item.id == "location_picker") onSelectLocation() else onDismiss()
               }
               ChatListItemType.CHANNEL -> {
                 onSelectChannel(item.id)
@@ -174,6 +148,21 @@ fun ChatsListSheet(
             }
           }
         )
+      }
+      item(key = "advanced_location") {
+        TextButton(
+          onClick = {
+            onAdvancedLocation()
+            onDismiss()
+          },
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Text(
+            "Расширенные локационные каналы…",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
+        }
       }
     }
   }
@@ -209,29 +198,29 @@ private fun ChatListRow(
       Spacer(Modifier.width(12.dp))
       Column(modifier = Modifier.weight(1f)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                item.title,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                modifier = Modifier.weight(1f)
-            )
-            if (item.unreadCount > 0) {
-                Badge(containerColor = ChatColors.unreadBadge) {
-                    Text(item.unreadCount.toString())
-                }
+          Text(
+            item.title,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            modifier = Modifier.weight(1f)
+          )
+          if (item.unreadCount > 0) {
+            Badge(containerColor = ChatColors.unreadBadge) {
+              Text(item.unreadCount.toString())
             }
+          }
         }
         Text(
           item.subtitle,
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
-          maxLines = 1
+          maxLines = 2
         )
       }
     }
