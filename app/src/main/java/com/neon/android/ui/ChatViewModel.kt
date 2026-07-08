@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.random.Random
 import com.neon.android.services.VerificationService
+import com.neon.android.identity.SecureIdentityStateManager
 import com.neon.android.identity.UserProfileManager
 import com.neon.android.noise.NoiseSession
 import com.neon.android.nostr.GeohashAliasRegistry

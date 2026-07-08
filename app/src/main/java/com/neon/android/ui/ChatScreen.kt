@@ -540,8 +540,11 @@ private fun ChatDialogs(
 
     // About sheet
     var showDebugSheet by remember { mutableStateOf(false) }
+    val nickname by viewModel.nickname.collectAsStateWithLifecycle()
     AboutSheet(
         isPresented = showAppInfo,
+        nickname = nickname,
+        onNicknameChange = { viewModel.setNickname(it) },
         onDismiss = onAppInfoDismiss,
         onShowDebug = { showDebugSheet = true }
     )

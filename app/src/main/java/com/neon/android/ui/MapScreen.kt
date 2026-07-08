@@ -48,41 +48,40 @@ fun MapScreen(
     modifier = modifier
   ) {
     BitchatSheetTopBar(
+      onClose = onDismiss,
       title = { BitchatSheetTitle("Карта пользователей") },
       actions = {
         IconButton(onClick = { mapKey++ }) {
           Icon(Icons.Default.Refresh, contentDescription = "Обновить")
         }
-        IconButton(onClick = onDismiss) {
-          Icon(Icons.Default.Close, contentDescription = "Закрыть")
-        }
       }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
-      AndroidView(
-        factory = { ctx ->
-          WebView(ctx).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
-          }
-        },
-        update = { webView ->
-          webView.loadDataWithBaseURL(
-            "https://localhost/",
-            buildMapHtml(userLocations.values.toList()),
-            "text/html",
-            "UTF-8",
-            null
-          )
-        },
-        modifier = Modifier
-          .fillMaxWidth()
-          .weight(1f)
-          .padding(horizontal = 8.dp),
-        key = mapKey
-      )
+      key(mapKey) {
+        AndroidView(
+          factory = { ctx ->
+            WebView(ctx).apply {
+              settings.javaScriptEnabled = true
+              settings.domStorageEnabled = true
+              webViewClient = WebViewClient()
+            }
+          },
+          update = { webView ->
+            webView.loadDataWithBaseURL(
+              "https://localhost/",
+              buildMapHtml(userLocations.values.toList()),
+              "text/html",
+              "UTF-8",
+              null
+            )
+          },
+          modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .padding(horizontal = 8.dp)
+        )
+      }
 
       LazyColumn(
         modifier = Modifier

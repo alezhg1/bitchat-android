@@ -110,7 +110,10 @@ fun ChatsListSheet(
     sheetState = sheetState,
     modifier = modifier
   ) {
-    BitchatSheetTopBar(title = { BitchatSheetTitle("Чаты") })
+    BitchatSheetTopBar(
+      onClose = onDismiss,
+      title = { BitchatSheetTitle("Чаты") }
+    )
 
     LazyColumn(
       modifier = Modifier
