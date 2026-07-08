@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neon.android.core.ui.utils.singleOrTripleClickable
+import com.neon.android.ui.theme.ChatColors
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -414,7 +415,7 @@ private fun MainHeader(
                 onClick = onChatsClick,
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
             ) {
-                Text("Чаты", color = Color(0xFF007AFF), style = MaterialTheme.typography.labelLarge)
+                Text("Чаты", color = ChatColors.meshAccent, style = MaterialTheme.typography.labelLarge)
             }
 
             // Map button for admin/teacher

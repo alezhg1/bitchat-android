@@ -233,16 +233,13 @@ class BluetoothStatusManager(
                     BluetoothAdapter.STATE_ON -> {
                         Log.d(TAG, "Bluetooth turned ON")
                         onBluetoothStateChanged(BluetoothStatus.ENABLED)
-                        bluetoothStatusManager.handleBluetoothStatus(BluetoothStatus.ENABLED)
                     }
                     BluetoothAdapter.STATE_OFF -> {
                         Log.d(TAG, "Bluetooth turned OFF")
                         onBluetoothStateChanged(BluetoothStatus.DISABLED)
-                        bluetoothStatusManager.onBluetoothDisabled("User has turned off their Blue")
                     }
-                    BluetoothAdapter.STATE_TURNING_ON, BluetoothAdapter.STATE_OFF -> {
-                        Log.d(TAG, "Bluetooth state transitioning: ${bluetoothStatusManager.getAdapterStateName(intent.getIntExtra(
-                            BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR))}")
+                    BluetoothAdapter.STATE_TURNING_ON, BluetoothAdapter.STATE_TURNING_OFF -> {
+                        Log.d(TAG, "Bluetooth state transitioning")
                     }
                 }
             }

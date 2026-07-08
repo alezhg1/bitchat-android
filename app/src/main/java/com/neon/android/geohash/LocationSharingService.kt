@@ -4,12 +4,14 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.neon.android.identity.UserProfileManager
 import com.neon.android.mesh.BluetoothMeshService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
+import kotlin.coroutines.resume
 
 data class UserLocationEntry(
   val staticId: String,
@@ -29,8 +34,8 @@ data class UserLocationEntry(
 )
 
 /**
- * Broadcasts user geolocation every 15 minutes over mesh and collects locations from peers.
- * Admins and teachers use this data to render the org map.
+ * Broadcasts user geolocation every 15 minutes over BLE mesh (multi-hop relay)
+ * and collects locations from peers. Admins/teachers render the org map.
  */
 class LocationSharingService private constructor(private val context: Context) {
 
@@ -38,6 +43,7 @@ class LocationSharingService private constructor(private val context: Context) {
     private const val TAG = "LocationSharing"
     private const val INTERVAL_MS = 15 * 60 * 1000L
     const val GEOLOC_PREFIX = "[GEOLOC]:"
+    private const val CACHE_FILE = "user_locations_cache.json"
 
     @Volatile
     private var INSTANCE: LocationSharingService? = null
@@ -76,20 +82,31 @@ class LocationSharingService private constructor(private val context: Context) {
     }
   }
 
+  private val gson = Gson()
+  private val locationProvider = FusedLocationProvider(context)
+  private val cacheFile = File(context.filesDir, CACHE_FILE)
+
   private val _userLocations = MutableStateFlow<Map<String, UserLocationEntry>>(emptyMap())
   val userLocations: StateFlow<Map<String, UserLocationEntry>> = _userLocations.asStateFlow()
 
   private var sharingJob: Job? = null
+  private var ioScope: CoroutineScope? = null
+
+  init {
+    loadCachedLocations()
+  }
 
   fun start(meshService: BluetoothMeshService, scope: CoroutineScope) {
     sharingJob?.cancel()
+    ioScope = scope
     val profile = UserProfileManager.getInstance(context)
     profile.ensureStaticId(meshService.myPeerID)
 
     sharingJob = scope.launch {
+      broadcastLocation(meshService)
       while (isActive) {
-        broadcastLocation(meshService)
         delay(INTERVAL_MS)
+        broadcastLocation(meshService)
       }
     }
   }
@@ -101,22 +118,32 @@ class LocationSharingService private constructor(private val context: Context) {
 
   fun handleIncomingMessage(content: String, senderPeerId: String?): Boolean {
     if (!content.startsWith(GEOLOC_PREFIX)) return false
-    val entry = LocationSharingService.parseGeolocMessage(content, senderPeerId) ?: return true
-    _userLocations.value = _userLocations.value + (entry.staticId to entry)
+    val entry = parseGeolocMessage(content, senderPeerId) ?: return true
+    mergeLocation(entry)
     return true
   }
 
-  private fun broadcastLocation(meshService: BluetoothMeshService) {
-    val location = getCurrentLocation() ?: return
+  private fun mergeLocation(entry: UserLocationEntry) {
+    val existing = _userLocations.value[entry.staticId]
+    if (existing != null && existing.timestampMs > entry.timestampMs) return
+    _userLocations.value = _userLocations.value + (entry.staticId to entry)
+    persistLocations()
+  }
+
+  private suspend fun broadcastLocation(meshService: BluetoothMeshService) {
     val profile = UserProfileManager.getInstance(context)
+    val location = getCurrentLocation() ?: run {
+      Log.w(TAG, "No location available to broadcast")
+      return
+    }
     val staticId = profile.getStaticId() ?: meshService.myPeerID
     val fio = profile.getFio()
     val role = profile.getRole().name
-    val payload = LocationSharingService.buildGeolocPayload(staticId, fio, location.latitude, location.longitude, role)
+    val payload = buildGeolocPayload(staticId, fio, location.latitude, location.longitude, role)
     try {
       meshService.sendMessage(payload)
-      _userLocations.value = _userLocations.value + (
-        staticId to UserLocationEntry(
+      mergeLocation(
+        UserLocationEntry(
           staticId = staticId,
           fio = fio,
           latitude = location.latitude,
@@ -126,23 +153,49 @@ class LocationSharingService private constructor(private val context: Context) {
           timestampMs = System.currentTimeMillis()
         )
       )
-      Log.d(TAG, "Broadcast location for $staticId")
+      Log.d(TAG, "Broadcast location for $staticId via mesh")
     } catch (e: Exception) {
       Log.e(TAG, "Failed to broadcast location", e)
     }
   }
 
-  private fun getCurrentLocation(): Location? {
+  private suspend fun getCurrentLocation(): Location? {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
       != PackageManager.PERMISSION_GRANTED
     ) return null
 
-    val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    return try {
-      manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-        ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-    } catch (_: SecurityException) {
-      null
+    return suspendCancellableCoroutine { cont ->
+      locationProvider.requestFreshLocation { location ->
+        if (location != null) {
+          cont.resume(location)
+        } else {
+          locationProvider.getLastKnownLocation { fallback ->
+            cont.resume(fallback)
+          }
+        }
+      }
+    }
+  }
+
+  private fun loadCachedLocations() {
+    try {
+      if (!cacheFile.exists()) return
+      val type = object : TypeToken<List<UserLocationEntry>>() {}.type
+      val list: List<UserLocationEntry> = gson.fromJson(cacheFile.readText(), type) ?: emptyList()
+      _userLocations.value = list.associateBy { it.staticId }
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to load cached locations", e)
+    }
+  }
+
+  private fun persistLocations() {
+    ioScope?.launch(Dispatchers.IO) {
+      try {
+        val list = _userLocations.value.values.toList()
+        cacheFile.writeText(gson.toJson(list))
+      } catch (e: Exception) {
+        Log.w(TAG, "Failed to persist locations", e)
+      }
     }
   }
 }

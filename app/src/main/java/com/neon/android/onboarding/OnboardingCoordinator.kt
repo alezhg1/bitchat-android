@@ -249,17 +249,10 @@ class OnboardingCoordinator(
      * Complete the onboarding process and initialize the app
      */
     private fun completeOnboarding() {
-        Log.d(TAG, "Completing onboarding process")
-        
-        // Mark onboarding as complete
-        permissionManager.markOnboardingComplete()
-        
-        // Log final permission status
+        Log.d(TAG, "Permissions step complete — continuing onboarding checks")
         permissionManager.logPermissionStatus()
-        
-        // Notify completion with a small delay to ensure everything is ready
         activity.lifecycleScope.launch {
-            kotlinx.coroutines.delay(100) // Small delay for UI state to settle
+            kotlinx.coroutines.delay(100)
             onOnboardingComplete()
         }
     }

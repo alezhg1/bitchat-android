@@ -41,6 +41,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.neon.android.ui.theme.ChatColors
 import com.neon.android.ui.media.FileMessageItem
 import com.neon.android.model.BitchatMessageType
 import com.neon.android.R
@@ -382,9 +384,23 @@ fun MessageItem(
         val haptic = LocalHapticFeedback.current
         val context = LocalContext.current
         var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-        Text(
-            text = annotatedText,
-            modifier = modifier.pointerInput(message) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start
+        ) {
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = if (isSelf) 16.dp else 4.dp,
+                    bottomEnd = if (isSelf) 4.dp else 16.dp
+                ),
+                color = if (isSelf) ChatColors.selfBubble else ChatColors.peerBubble,
+                modifier = Modifier.widthIn(max = 320.dp)
+            ) {
+                Text(
+                    text = annotatedText,
+                    modifier = modifier.pointerInput(message) {
                 detectTapGestures(
                     onTap = { position ->
                         val layout = textLayoutResult ?: return@detectTapGestures
@@ -460,7 +476,9 @@ fun MessageItem(
                 color = colorScheme.onSurface
             ),
             onTextLayout = { result -> textLayoutResult = result }
-        )
+                )
+            }
+        }
     }
 }
 

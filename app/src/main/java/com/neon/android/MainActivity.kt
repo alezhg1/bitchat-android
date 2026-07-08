@@ -191,13 +191,17 @@ class MainActivity : OrientationAwareActivity() {
         val isLocationLoading by mainViewModel.isLocationLoading.collectAsState()
         val isBatteryOptimizationLoading by mainViewModel.isBatteryOptimizationLoading.collectAsState()
 
-        DisposableEffect(context, bluetoothStatusManager) {
+        DisposableEffect(onboardingState, context) {
+            if (onboardingState != OnboardingState.BLUETOOTH_CHECK) {
+                onDispose { }
+                return@DisposableEffect
+            }
 
             val receiver = bluetoothStatusManager.monitorBluetoothState(
                 context = context,
                 bluetoothStatusManager = bluetoothStatusManager,
                 onBluetoothStateChanged = { status ->
-                    if (status == BluetoothStatus.ENABLED && onboardingState == OnboardingState.BLUETOOTH_CHECK) {
+                    if (status == BluetoothStatus.ENABLED) {
                         checkBluetoothAndProceed()
                     }
                 }
@@ -206,9 +210,7 @@ class MainActivity : OrientationAwareActivity() {
             onDispose {
                 try {
                     context.unregisterReceiver(receiver)
-                    Log.d("BluetoothStatusUI", "BroadcastReceiver unregistered")
-                } catch (e: IllegalStateException) {
-                    Log.w("BluetoothStatusUI", "Receiver was not registered")
+                } catch (_: IllegalStateException) {
                 }
             }
         }
@@ -219,10 +221,15 @@ class MainActivity : OrientationAwareActivity() {
             }
 
             OnboardingState.LOGIN -> {
+                val staticPreview = try {
+                    com.neon.android.identity.UserProfileManager.getInstance(context)
+                        .getStaticId() ?: meshService.myPeerID
+                } catch (_: Exception) { "" }
                 LoginScreen(
                     modifier = modifier,
-                    onLogin = { name ->
-                        chatViewModel.setNickname(name)
+                    staticIdPreview = staticPreview,
+                    onLogin = { fio, role ->
+                        chatViewModel.completeProfileSetup(fio, role)
                         mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
                         initializeApp()
                     }
@@ -607,12 +614,14 @@ class MainActivity : OrientationAwareActivity() {
      * Check if user is logged in (has nickname) and proceed to initialization or login screen
      */
     private fun checkLoginAndProceed() {
-        val currentNickname = chatViewModel.nickname.value
-        if (currentNickname.isBlank()) {
-            Log.d("MainActivity", "No nickname found, showing login screen")
+        permissionManager.markOnboardingComplete()
+        val profileDone = com.neon.android.identity.UserProfileManager.getInstance(this).isProfileSetupDone()
+        val hasNickname = com.neon.android.ui.DataManager(this).hasNickname()
+        if (!profileDone && !hasNickname) {
+            Log.d("MainActivity", "Profile not configured, showing login screen")
             mainViewModel.updateOnboardingState(OnboardingState.LOGIN)
         } else {
-            Log.d("MainActivity", "Nickname found: $currentNickname, proceeding to initialization")
+            Log.d("MainActivity", "Profile ready, proceeding to initialization")
             mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
             initializeApp()
         }
@@ -705,7 +714,11 @@ class MainActivity : OrientationAwareActivity() {
                 delay(1000) // Give the system time to process permission grants
                 
                 Log.d("MainActivity", "Permissions verified, initializing chat system")
-                
+
+                com.neon.android.services.MessagePersistenceService
+                    .getInstance(this@MainActivity)
+                    .loadAllIntoAppState()
+
                 // Initialize PoW preferences early in the initialization process
                 PoWPreferenceManager.init(this@MainActivity)
                 Log.d("MainActivity", "PoW preferences initialized")

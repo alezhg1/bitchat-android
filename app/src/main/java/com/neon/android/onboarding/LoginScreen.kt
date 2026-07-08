@@ -1,26 +1,54 @@
 package com.neon.android.onboarding
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.neon.android.identity.RoleKeyManager
+import com.neon.android.identity.UserRole
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    onLogin: (String) -> Unit
+    staticIdPreview: String = "",
+    onLogin: (fio: String, role: UserRole) -> Unit
 ) {
-    var nickname by remember { mutableStateFlowOf("") }
-    val isError = nickname.isBlank()
+    val context = LocalContext.current
+    val roleKeyManager = remember { RoleKeyManager.getInstance(context) }
+
+    var fio by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
+    var fioError by remember { mutableStateOf<String?>(null) }
+    var pendingRole by remember { mutableStateOf<UserRole?>(null) }
+    var secretKey by remember { mutableStateOf("") }
+    var keyError by remember { mutableStateOf<String?>(null) }
+    var unlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
+
+    fun selectRole(role: UserRole) {
+        if (role == UserRole.STUDENT || role in unlockedRoles) {
+            selectedRole = role
+        } else {
+            pendingRole = role
+            secretKey = ""
+            keyError = null
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -28,43 +56,119 @@ fun LoginScreen(
         Text(
             text = "Добро пожаловать",
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
+            fontWeight = FontWeight.Bold
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
+        Spacer(Modifier.height(8.dp))
         Text(
-            text = "Введите ваше ФИО или никнейм для входа",
+            text = "Укажите ФИО и роль для входа в мессенджер",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Spacer(Modifier.height(24.dp))
+
         OutlinedTextField(
-            value = nickname,
-            onValueChange = { nickname = it },
-            label = { Text("ФИО / Логин") },
-            placeholder = { Text("Иван Иванов") },
+            value = fio,
+            onValueChange = { fio = it; fioError = null },
+            label = { Text("ФИО") },
+            placeholder = { Text("Иванов Иван Иванович") },
+            isError = fioError != null,
+            supportingText = fioError?.let { { Text(it) } },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            isError = isError && nickname.isNotEmpty(),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Done
             )
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
+
+        if (staticIdPreview.isNotBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text("Static ID", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        staticIdPreview,
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        "Неизменяемый идентификатор устройства",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Text("Роль", style = MaterialTheme.typography.titleSmall, modifier = Modifier.fillMaxWidth())
+        UserRole.entries.forEach { role ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = selectedRole == role, onClick = { selectRole(role) })
+                Spacer(Modifier.width(8.dp))
+                Text(role.displayNameRu)
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
         Button(
-            onClick = { if (nickname.isNotBlank()) onLogin(nickname) },
+            onClick = {
+                if (fio.trim().length < 2) {
+                    fioError = "Введите ФИО (минимум 2 символа)"
+                    return@Button
+                }
+                onLogin(fio.trim(), selectedRole)
+            },
             modifier = Modifier.fillMaxWidth(),
-            enabled = nickname.isNotBlank()
+            enabled = fio.isNotBlank()
         ) {
             Text("Войти")
         }
     }
-}
 
-private fun <T> mutableStateFlowOf(value: T) = mutableStateOf(value)
+    pendingRole?.let { requestedRole ->
+        AlertDialog(
+            onDismissRequest = { pendingRole = null },
+            title = { Text("Секретный ключ: ${requestedRole.displayNameRu}") },
+            text = {
+                Column {
+                    Text("Введите секретный ключ для роли «${requestedRole.displayNameRu}».")
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = secretKey,
+                        onValueChange = { secretKey = it; keyError = null },
+                        label = { Text("Секретный ключ") },
+                        singleLine = true,
+                        isError = keyError != null,
+                        supportingText = keyError?.let { { Text(it) } },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (roleKeyManager.verifyAndGrant(requestedRole, secretKey)) {
+                        unlockedRoles = unlockedRoles + requestedRole
+                        selectedRole = requestedRole
+                        pendingRole = null
+                    } else {
+                        keyError = "Неверный ключ"
+                    }
+                }) { Text("Подтвердить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRole = null }) { Text("Отмена") }
+            }
+        )
+    }
+}

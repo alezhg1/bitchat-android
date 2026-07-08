@@ -250,6 +250,7 @@ class ChatViewModel(
         val nickname = dataManager.loadNickname()
         state.setNickname(nickname)
         profileManager.ensureStaticId(meshService.myPeerID)
+        com.neon.android.identity.RoleKeyManager.getInstance(getApplication()).enforceStoredRole(profileManager)
         _staticId.value = profileManager.getStaticId() ?: meshService.myPeerID
         val fio = profileManager.getFio()
         _fio.value = if (fio != "Пользователь") fio else nickname
@@ -344,10 +345,18 @@ class ChatViewModel(
     }
 
     fun completeProfileSetup(fio: String, role: com.neon.android.identity.UserRole) {
+        val roleKeyManager = com.neon.android.identity.RoleKeyManager.getInstance(getApplication())
+        val effectiveRole = when (role) {
+            com.neon.android.identity.UserRole.STUDENT -> com.neon.android.identity.UserRole.STUDENT
+            else -> roleKeyManager.grantedRole().takeIf { it == role }
+                ?: com.neon.android.identity.UserRole.STUDENT
+        }
         profileManager.setFio(fio)
-        profileManager.setRole(role)
+        profileManager.setRole(effectiveRole)
+        profileManager.ensureStaticId(meshService.myPeerID)
         profileManager.markProfileSetupDone()
         _fio.value = fio
+        _staticId.value = profileManager.getStaticId() ?: meshService.myPeerID
         setNickname(fio)
     }
 

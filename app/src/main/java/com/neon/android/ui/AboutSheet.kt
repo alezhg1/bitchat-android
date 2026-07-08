@@ -104,6 +104,7 @@ private fun SettingsSwitchRow(
 fun AboutSheet(
     isPresented: Boolean,
     nickname: String,
+    staticId: String = "",
     onNicknameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onShowDebug: (() -> Unit)? = null,
@@ -202,6 +203,19 @@ fun AboutSheet(
                                         unfocusedBorderColor = colorScheme.outline.copy(alpha = 0.4f)
                                     )
                                 )
+                                if (staticId.isNotBlank()) {
+                                    Text(
+                                        text = "Static ID: $staticId",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "Static ID нельзя изменить",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    )
+                                }
                             }
                         }
                     }

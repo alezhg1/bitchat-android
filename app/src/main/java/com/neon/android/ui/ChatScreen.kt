@@ -67,7 +67,6 @@ fun ChatScreen(viewModel: ChatViewModel) {
     var showLocationChannelsSheet by remember { mutableStateOf(false) }
     var showChatsListSheet by remember { mutableStateOf(false) }
     var showMapScreen by remember { mutableStateOf(false) }
-    var showProfileSetup by remember { mutableStateOf(!viewModel.isProfileSetupDone()) }
     var showLocationNotesSheet by remember { mutableStateOf(false) }
     var showUserSheet by remember { mutableStateOf(false) }
     var selectedUserForSheet by remember { mutableStateOf("") }
@@ -356,19 +355,6 @@ fun ChatScreen(viewModel: ChatViewModel) {
         showMapScreen = showMapScreen,
         onMapScreenDismiss = { showMapScreen = false },
     )
-
-    if (showProfileSetup) {
-        ProfileSetupScreen(
-            staticId = viewModel.staticId.collectAsStateWithLifecycle().value.ifBlank {
-                viewModel.meshService.myPeerID
-            },
-            onComplete = { fio, role ->
-                viewModel.completeProfileSetup(fio, role)
-                showProfileSetup = false
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-    }
 }
 
 @Composable
@@ -541,10 +527,12 @@ private fun ChatDialogs(
     // About sheet
     var showDebugSheet by remember { mutableStateOf(false) }
     val nickname by viewModel.nickname.collectAsStateWithLifecycle()
+    val staticId by viewModel.staticId.collectAsStateWithLifecycle()
     AboutSheet(
         isPresented = showAppInfo,
         nickname = nickname,
-        onNicknameChange = { viewModel.setNickname(it) },
+        staticId = staticId.ifBlank { viewModel.meshService.myPeerID },
+        onNicknameChange = { viewModel.setFio(it) },
         onDismiss = onAppInfoDismiss,
         onShowDebug = { showDebugSheet = true }
     )
@@ -563,7 +551,8 @@ private fun ChatDialogs(
         viewModel = viewModel,
         onSelectMesh = onSelectMeshChat,
         onSelectLocation = onSelectLocationChat,
-        onSelectChannel = onSelectChannelChat
+        onSelectChannel = onSelectChannelChat,
+        onSelectPrivate = { viewModel.showPrivateChatSheet(it) }
     )
 
     // Map screen for admin/teacher

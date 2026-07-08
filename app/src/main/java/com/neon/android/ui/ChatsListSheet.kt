@@ -7,12 +7,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,20 +20,22 @@ import com.neon.android.geohash.ChannelID
 import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
 import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
 import com.neon.android.core.ui.component.sheet.BitchatSheetTitle
+import com.neon.android.ui.theme.ChatColors
 
 data class ChatListItem(
   val id: String,
   val title: String,
   val subtitle: String,
   val type: ChatListItemType,
-  val accentColor: Color,
+  val accentColor: androidx.compose.ui.graphics.Color,
   val unreadCount: Int = 0
 )
 
 enum class ChatListItemType {
   MESH,
   LOCATION,
-  CHANNEL
+  CHANNEL,
+  PRIVATE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +47,7 @@ fun ChatsListSheet(
   onSelectMesh: () -> Unit,
   onSelectLocation: () -> Unit,
   onSelectChannel: (String) -> Unit,
+  onSelectPrivate: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   if (!isPresented) return
@@ -53,6 +56,9 @@ fun ChatsListSheet(
   val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
   val joinedChannels by viewModel.joinedChannels.collectAsStateWithLifecycle()
   val unreadChannels by viewModel.unreadChannelMessages.collectAsStateWithLifecycle()
+  val privateChats by viewModel.privateChats.collectAsStateWithLifecycle()
+  val unreadPrivate by viewModel.unreadPrivateMessages.collectAsStateWithLifecycle()
+  val peerNicknames by viewModel.peerNicknames.collectAsStateWithLifecycle()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
   val chatItems = buildList {
@@ -62,8 +68,7 @@ fun ChatsListSheet(
         title = "Общий чат",
         subtitle = "Сообщения через mesh-сеть",
         type = ChatListItemType.MESH,
-        accentColor = Color(0xFF007AFF),
-        unreadCount = 0
+        accentColor = ChatColors.meshAccent
       )
     )
     when (val loc = selectedLocationChannel) {
@@ -72,9 +77,9 @@ fun ChatsListSheet(
           ChatListItem(
             id = "geo:${loc.channel.geohash}",
             title = "Локационный чат",
-            subtitle = "#${loc.channel.geohash}",
+            subtitle = loc.channel.geohash,
             type = ChatListItemType.LOCATION,
-            accentColor = Color(0xFF00C851),
+            accentColor = ChatColors.locationAccent,
             unreadCount = unreadChannels["geo:${loc.channel.geohash}"] ?: 0
           )
         )
@@ -86,7 +91,7 @@ fun ChatsListSheet(
             title = "Локационные чаты",
             subtitle = "Выбрать чат по геолокации",
             type = ChatListItemType.LOCATION,
-            accentColor = Color(0xFF00C851)
+            accentColor = ChatColors.locationAccent
           )
         )
       }
@@ -96,10 +101,24 @@ fun ChatsListSheet(
         ChatListItem(
           id = channel,
           title = channel,
-          subtitle = "Канал",
+          subtitle = "Групповой чат",
           type = ChatListItemType.CHANNEL,
-          accentColor = Color(0xFFFF9500),
+          accentColor = ChatColors.channelAccent,
           unreadCount = unreadChannels[channel] ?: 0
+        )
+      )
+    }
+    privateChats.keys.sorted().forEach { peerId ->
+      val title = peerNicknames[peerId] ?: peerId.take(12)
+      val preview = privateChats[peerId]?.lastOrNull()?.content?.take(40) ?: "Личная переписка"
+      add(
+        ChatListItem(
+          id = "private:$peerId",
+          title = title,
+          subtitle = preview,
+          type = ChatListItemType.PRIVATE,
+          accentColor = ChatColors.privateAccent,
+          unreadCount = unreadPrivate[peerId] ?: 0
         )
       )
     }
@@ -128,6 +147,7 @@ fun ChatsListSheet(
             selectedLocationChannel is ChannelID.Location &&
             currentChannel == null
           ChatListItemType.CHANNEL -> currentChannel == item.id
+          ChatListItemType.PRIVATE -> false
           else -> false
         }
         ChatListRow(
@@ -140,14 +160,14 @@ fun ChatsListSheet(
                 onDismiss()
               }
               ChatListItemType.LOCATION -> {
-                if (item.id == "location_picker") {
-                  onSelectLocation()
-                } else {
-                  onDismiss()
-                }
+                if (item.id == "location_picker") onSelectLocation() else onDismiss()
               }
               ChatListItemType.CHANNEL -> {
                 onSelectChannel(item.id)
+                onDismiss()
+              }
+              ChatListItemType.PRIVATE -> {
+                onSelectPrivate(item.id.removePrefix("private:"))
                 onDismiss()
               }
             }
@@ -168,16 +188,17 @@ private fun ChatListRow(
     ChatListItemType.MESH -> Icons.Default.Chat
     ChatListItemType.LOCATION -> Icons.Default.LocationOn
     ChatListItemType.CHANNEL -> Icons.Default.Tag
+    ChatListItemType.PRIVATE -> Icons.Default.Person
   }
   Surface(
     modifier = Modifier
       .fillMaxWidth()
       .clickable(onClick = onClick),
-    shape = MaterialTheme.shapes.medium,
+    shape = MaterialTheme.shapes.large,
     color = if (isActive) {
       item.accentColor.copy(alpha = 0.12f)
     } else {
-      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
     },
     tonalElevation = if (isActive) 2.dp else 0.dp
   ) {
@@ -192,11 +213,14 @@ private fun ChatListRow(
         Text(
           item.subtitle,
           style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1
         )
       }
       if (item.unreadCount > 0) {
-        Badge { Text(item.unreadCount.toString()) }
+        Badge(containerColor = ChatColors.unreadBadge) {
+          Text(item.unreadCount.toString())
+        }
       }
     }
   }
