@@ -1,4 +1,4 @@
-package com.bitchat.android.ui
+package com.neon.android.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,8 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.bitchat.android.identity.UserProfileManager
-import com.bitchat.android.identity.UserRole
+import com.neon.android.identity.UserProfileManager
+import com.neon.android.identity.UserRole
 
 @Composable
 fun ProfileSetupScreen(

@@ -1,8 +1,8 @@
-package com.bitchat.android.services
+package com.neon.android.services
 
 import android.content.Context
 import android.util.Log
-import com.bitchat.android.model.BitchatMessage
+import com.neon.android.model.BitchatMessage
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken

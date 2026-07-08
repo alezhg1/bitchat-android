@@ -1,4 +1,4 @@
-package com.bitchat.android.ui
+package com.neon.android.ui
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -19,12 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bitchat.android.geohash.LocationSharingService
-import com.bitchat.android.geohash.UserLocationEntry
-import com.bitchat.android.identity.UserRole
-import com.bitchat.android.core.ui.component.sheet.BitchatBottomSheet
-import com.bitchat.android.core.ui.component.sheet.BitchatSheetTopBar
-import com.bitchat.android.core.ui.component.sheet.BitchatSheetTitle
+import com.neon.android.geohash.LocationSharingService
+import com.neon.android.geohash.UserLocationEntry
+import com.neon.android.identity.UserRole
+import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
+import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
+import com.neon.android.core.ui.component.sheet.BitchatSheetTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

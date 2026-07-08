@@ -1,4 +1,4 @@
-package com.bitchat.android.ui
+package com.neon.android.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,10 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bitchat.android.geohash.ChannelID
-import com.bitchat.android.core.ui.component.sheet.BitchatBottomSheet
-import com.bitchat.android.core.ui.component.sheet.BitchatSheetTopBar
-import com.bitchat.android.core.ui.component.sheet.BitchatSheetTitle
+import com.neon.android.geohash.ChannelID
+import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
+import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
+import com.neon.android.core.ui.component.sheet.BitchatSheetTitle
 
 data class ChatListItem(
   val id: String,

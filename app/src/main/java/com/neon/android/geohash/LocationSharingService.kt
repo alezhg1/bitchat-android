@@ -1,4 +1,4 @@
-package com.bitchat.android.geohash
+package com.neon.android.geohash
 
 import android.Manifest
 import android.content.Context
@@ -7,8 +7,8 @@ import android.location.Location
 import android.location.LocationManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.bitchat.android.identity.UserProfileManager
-import com.bitchat.android.mesh.BluetoothMeshService
+import com.neon.android.identity.UserProfileManager
+import com.neon.android.mesh.BluetoothMeshService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

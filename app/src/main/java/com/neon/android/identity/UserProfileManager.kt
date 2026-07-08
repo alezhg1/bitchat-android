@@ -1,4 +1,4 @@
-package com.bitchat.android.identity
+package com.neon.android.identity
 
 import android.content.Context
 import android.content.SharedPreferences

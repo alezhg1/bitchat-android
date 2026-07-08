@@ -27,9 +27,9 @@ class MeshDelegateHandler(
 
     override fun didReceiveMessage(message: BitchatMessage) {
         coroutineScope.launch {
-            if (message.content.startsWith(com.bitchat.android.geohash.LocationSharingService.GEOLOC_PREFIX)) {
+            if (message.content.startsWith(com.neon.android.geohash.LocationSharingService.GEOLOC_PREFIX)) {
                 appContext?.let { ctx ->
-                    com.bitchat.android.geohash.LocationSharingService
+                    com.neon.android.geohash.LocationSharingService
                         .getInstance(ctx)
                         .handleIncomingMessage(message.content, message.senderPeerID)
                 }

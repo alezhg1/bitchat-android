@@ -1,9 +1,9 @@
-package com.bitchat.android.ui
+package com.neon.android.ui
 
 import android.content.Context
-import com.bitchat.android.model.BitchatMessage
-import com.bitchat.android.model.DeliveryStatus
-import com.bitchat.android.services.MessagePersistenceService
+import com.neon.android.model.BitchatMessage
+import com.neon.android.model.DeliveryStatus
+import com.neon.android.services.MessagePersistenceService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,8 +22,8 @@ class MessageManager(
     // Message deduplication - FIXED: Prevent duplicate messages from dual connection paths
     private val processedUIMessages = Collections.synchronizedSet(mutableSetOf<String>())
     private val recentSystemEvents = Collections.synchronizedMap(mutableMapOf<String, Long>())
-    private val MESSAGE_DEDUP_TIMEOUT = com.bitchat.android.util.AppConstants.UI.MESSAGE_DEDUP_TIMEOUT_MS // 30 seconds
-    private val SYSTEM_EVENT_DEDUP_TIMEOUT = com.bitchat.android.util.AppConstants.UI.SYSTEM_EVENT_DEDUP_TIMEOUT_MS // 5 seconds
+    private val MESSAGE_DEDUP_TIMEOUT = com.neon.android.util.AppConstants.UI.MESSAGE_DEDUP_TIMEOUT_MS // 30 seconds
+    private val SYSTEM_EVENT_DEDUP_TIMEOUT = com.neon.android.util.AppConstants.UI.SYSTEM_EVENT_DEDUP_TIMEOUT_MS // 5 seconds
 
     private fun persist(block: suspend MessagePersistenceService.() -> Unit) {
         val ctx = appContext ?: return
@@ -40,7 +40,7 @@ class MessageManager(
         currentMessages.add(message)
         state.setMessages(currentMessages)
         // Reflect into process-wide store so snapshot replacements don't drop local outgoing messages
-        try { com.bitchat.android.services.AppStateStore.addPublicMessage(message) } catch (_: Exception) { }
+        try { com.neon.android.services.AppStateStore.addPublicMessage(message) } catch (_: Exception) { }
         if (message.sender != "system") {
             persist { savePublicMessage(message) }
         }
@@ -75,7 +75,7 @@ class MessageManager(
         currentChannelMessages[channel] = channelMessageList
         state.setChannelMessages(currentChannelMessages)
         // Reflect into process-wide store
-        try { com.bitchat.android.services.AppStateStore.addChannelMessage(channel, message) } catch (_: Exception) { }
+        try { com.neon.android.services.AppStateStore.addChannelMessage(channel, message) } catch (_: Exception) { }
         persist { saveChannelMessage(channel, message) }
         
         // Update unread count if not currently viewing this channel
@@ -85,7 +85,7 @@ class MessageManager(
             if (channel.startsWith("geo:")) {
                 val geo = channel.removePrefix("geo:")
                 val selected = state.selectedLocationChannel.value
-                selected is com.bitchat.android.geohash.ChannelID.Location && selected.channel.geohash.equals(geo, ignoreCase = true)
+                selected is com.neon.android.geohash.ChannelID.Location && selected.channel.geohash.equals(geo, ignoreCase = true)
             } else false
         } catch (_: Exception) { false }
 
@@ -131,7 +131,7 @@ class MessageManager(
         currentPrivateChats[peerID] = chatMessages
         state.setPrivateChats(currentPrivateChats)
         // Reflect into process-wide store
-        try { com.bitchat.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
+        try { com.neon.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
         persist { savePrivateMessage(peerID, message) }
         
         // Mark as unread if not currently viewing this chat
@@ -153,7 +153,7 @@ class MessageManager(
         currentPrivateChats[peerID] = chatMessages
         state.setPrivateChats(currentPrivateChats)
         // Reflect into process-wide store
-        try { com.bitchat.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
+        try { com.neon.android.services.AppStateStore.addPrivateMessage(peerID, message) } catch (_: Exception) { }
         persist { savePrivateMessage(peerID, message) }
     }
     
@@ -274,7 +274,7 @@ class MessageManager(
         if (updated) {
             state.setPrivateChats(updatedPrivateChats)
             // Keep process-wide store in sync to prevent snapshot overwrites resetting status
-            try { com.bitchat.android.services.AppStateStore.updatePrivateMessageStatus(messageID, status) } catch (_: Exception) { }
+            try { com.neon.android.services.AppStateStore.updatePrivateMessageStatus(messageID, status) } catch (_: Exception) { }
         }
         
         // Update in main messages

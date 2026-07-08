@@ -1,4 +1,4 @@
-package com.bitchat.android.identity
+package com.neon.android.identity
 
 enum class UserRole(val displayNameRu: String) {
     ADMIN("Администратор"),
