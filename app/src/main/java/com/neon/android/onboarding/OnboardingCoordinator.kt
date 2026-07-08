@@ -108,6 +108,23 @@ class OnboardingCoordinator(
      * Handle permission request results
      */
     private fun handlePermissionResults(permissions: Map<String, Boolean>) {
+        try {
+            handlePermissionResultsInternal(permissions)
+        } catch (e: Exception) {
+            // Never crash while transitioning between onboarding steps (e.g. right after the
+            // first permission grant, before battery optimization). Fall back to re-checking
+            // permissions on the current permission state instead of hard-crashing.
+            Log.e(TAG, "Error handling permission results; recovering gracefully", e)
+            try {
+                completeOnboarding()
+            } catch (inner: Exception) {
+                Log.e(TAG, "Recovery also failed", inner)
+                onOnboardingFailed("Не удалось завершить настройку разрешений: ${inner.message}")
+            }
+        }
+    }
+
+    private fun handlePermissionResultsInternal(permissions: Map<String, Boolean>) {
         Log.d(TAG, "Received permission results:")
         permissions.forEach { (permission, granted) ->
             Log.d(TAG, "  $permission: ${if (granted) "GRANTED" else "DENIED"}")

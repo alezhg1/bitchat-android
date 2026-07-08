@@ -547,6 +547,21 @@ class MainActivity : OrientationAwareActivity() {
     }
     
     private fun handleOnboardingComplete() {
+        try {
+            handleOnboardingCompleteInternal()
+        } catch (e: Exception) {
+            // Guard the transition that runs right after the first permission grant and
+            // before the battery-optimization screen, so a transient error cannot crash the app.
+            Log.e("MainActivity", "Error during onboarding completion; recovering", e)
+            try {
+                checkLoginAndProceed()
+            } catch (inner: Exception) {
+                handleOnboardingFailed("Не удалось завершить настройку: ${inner.message}")
+            }
+        }
+    }
+
+    private fun handleOnboardingCompleteInternal() {
         Log.d("MainActivity", "Onboarding completed, checking Bluetooth and Location before initializing app")
         
         // After permissions are granted, re-check Bluetooth, Location, and Battery Optimization status

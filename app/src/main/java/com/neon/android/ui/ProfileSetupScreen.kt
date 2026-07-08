@@ -10,7 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.neon.android.identity.RoleKeyManager
 import com.neon.android.identity.UserProfileManager
 import com.neon.android.identity.UserRole
 
@@ -22,10 +24,29 @@ fun ProfileSetupScreen(
 ) {
   val context = LocalContext.current
   val profileManager = remember { UserProfileManager.getInstance(context) }
+  val roleKeyManager = remember { RoleKeyManager.getInstance(context) }
 
   var fio by remember { mutableStateOf(profileManager.getFio().takeIf { it != "Пользователь" } ?: "") }
-  var selectedRole by remember { mutableStateOf(profileManager.getRole()) }
+  var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
   var fioError by remember { mutableStateOf<String?>(null) }
+
+  // Secret-key dialog state for elevated roles
+  var pendingRole by remember { mutableStateOf<UserRole?>(null) }
+  var secretKey by remember { mutableStateOf("") }
+  var keyError by remember { mutableStateOf<String?>(null) }
+  // Roles already unlocked in this setup session (persisted encrypted on success)
+  var unlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
+
+  fun selectRole(role: UserRole) {
+    if (role == UserRole.STUDENT || role in unlockedRoles) {
+      selectedRole = role
+    } else {
+      // Require secret key before granting the elevated role
+      pendingRole = role
+      secretKey = ""
+      keyError = null
+    }
+  }
 
   Column(
     modifier = modifier
@@ -95,10 +116,14 @@ fun ProfileSetupScreen(
       ) {
         RadioButton(
           selected = selectedRole == role,
-          onClick = { selectedRole = role }
+          onClick = { selectRole(role) }
         )
         Spacer(Modifier.width(8.dp))
         Text(role.displayNameRu)
+        if (role != UserRole.STUDENT && role in unlockedRoles) {
+          Spacer(Modifier.width(8.dp))
+          Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        }
       }
     }
 
@@ -116,5 +141,48 @@ fun ProfileSetupScreen(
     ) {
       Text("Продолжить")
     }
+  }
+
+  val requestedRole = pendingRole
+  if (requestedRole != null) {
+    AlertDialog(
+      onDismissRequest = { pendingRole = null },
+      title = { Text("Секретный ключ: ${requestedRole.displayNameRu}") },
+      text = {
+        Column {
+          Text(
+            "Введите секретный ключ роли «${requestedRole.displayNameRu}».",
+            style = MaterialTheme.typography.bodyMedium
+          )
+          Spacer(Modifier.height(12.dp))
+          OutlinedTextField(
+            value = secretKey,
+            onValueChange = { secretKey = it; keyError = null },
+            label = { Text("Секретный ключ") },
+            singleLine = true,
+            isError = keyError != null,
+            supportingText = keyError?.let { { Text(it) } },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+          )
+        }
+      },
+      confirmButton = {
+        TextButton(onClick = {
+          if (roleKeyManager.verifyAndGrant(requestedRole, secretKey)) {
+            unlockedRoles = unlockedRoles + requestedRole
+            selectedRole = requestedRole
+            pendingRole = null
+          } else {
+            keyError = "Неверный ключ"
+          }
+        }) {
+          Text("Подтвердить")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { pendingRole = null }) { Text("Отмена") }
+      }
+    )
   }
 }
