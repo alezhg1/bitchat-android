@@ -192,46 +192,42 @@ class MainActivity : OrientationAwareActivity() {
         val isBatteryOptimizationLoading by mainViewModel.isBatteryOptimizationLoading.collectAsState()
 
         DisposableEffect(onboardingState, context) {
-            if (onboardingState != OnboardingState.BLUETOOTH_CHECK) {
-                onDispose { }
-                return@DisposableEffect
-            }
-
-            val receiver = bluetoothStatusManager.monitorBluetoothState(
-                context = context,
-                bluetoothStatusManager = bluetoothStatusManager,
-                onBluetoothStateChanged = { status ->
-                    if (status == BluetoothStatus.ENABLED) {
-                        checkBluetoothAndProceed()
+            if (onboardingState == OnboardingState.BLUETOOTH_CHECK) {
+                val receiver = bluetoothStatusManager.monitorBluetoothState(
+                    context = context,
+                    bluetoothStatusManager = bluetoothStatusManager,
+                    onBluetoothStateChanged = { status ->
+                        if (status == BluetoothStatus.ENABLED) {
+                            checkBluetoothAndProceed()
+                        }
+                    }
+                )
+                onDispose {
+                    try {
+                        context.unregisterReceiver(receiver)
+                    } catch (_: IllegalStateException) {
                     }
                 }
-            )
-
-            onDispose {
-                try {
-                    context.unregisterReceiver(receiver)
-                } catch (_: IllegalStateException) {
-                }
+            } else {
+                onDispose { }
             }
         }
 
         DisposableEffect(onboardingState, context) {
-            if (onboardingState != OnboardingState.LOCATION_CHECK) {
+            if (onboardingState == OnboardingState.LOCATION_CHECK) {
+                val receiver = locationStatusManager.monitorLocationState(context) { status ->
+                    if (status == LocationStatus.ENABLED) {
+                        handleLocationEnabled()
+                    }
+                }
+                onDispose {
+                    try {
+                        context.unregisterReceiver(receiver)
+                    } catch (_: IllegalStateException) {
+                    }
+                }
+            } else {
                 onDispose { }
-                return@DisposableEffect
-            }
-
-            val receiver = locationStatusManager.monitorLocationState(context) { status ->
-                if (status == LocationStatus.ENABLED) {
-                    handleLocationEnabled()
-                }
-            }
-
-            onDispose {
-                try {
-                    context.unregisterReceiver(receiver)
-                } catch (_: IllegalStateException) {
-                }
             }
         }
 

@@ -118,7 +118,7 @@ fun ChatsListSheet(
           subtitle = preview,
           type = ChatListItemType.PRIVATE,
           accentColor = ChatColors.privateAccent,
-          unreadCount = unreadPrivate[peerId] ?: 0
+          unreadCount = if (peerId in unreadPrivate) 1 else 0
         )
       )
     }
