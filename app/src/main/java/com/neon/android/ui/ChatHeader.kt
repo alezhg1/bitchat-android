@@ -385,9 +385,11 @@ private fun MainHeader(
                     color = colorScheme.onSurface,
                     maxLines = 1
                 )
+                val channelName = currentChannel
+                val locationChannel = selectedLocationChannel
                 val subtitle = when {
-                    currentChannel != null -> "Канал · ${currentChannel.removePrefix("#")}"
-                    com.neon.android.geohash.CampChatManager.isCampChannel(context, selectedLocationChannel) -> {
+                    channelName != null -> "Канал · ${channelName.removePrefix("#")}"
+                    com.neon.android.geohash.CampChatManager.isCampChannel(context, locationChannel) -> {
                         val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
                         if (isConnected && count > 0) {
                             "${com.neon.android.geohash.CampChatManager.getDisplayName(context)} · $count в сети"
@@ -395,8 +397,8 @@ private fun MainHeader(
                             "${com.neon.android.geohash.CampChatManager.getDisplayName(context)} · ожидание участников"
                         }
                     }
-                    selectedLocationChannel is com.neon.android.geohash.ChannelID.Location ->
-                        "Локационный канал · ${selectedLocationChannel.channel.geohash.take(8)}…"
+                    locationChannel is com.neon.android.geohash.ChannelID.Location ->
+                        "Локационный канал · ${locationChannel.channel.geohash.take(8)}…"
                     else -> {
                         val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
                         if (isConnected && count > 0) "$count в сети" else "Ожидание подключений"
@@ -476,12 +478,15 @@ private fun CurrentChatBadge(
     val teleported by viewModel.isTeleported.collectAsStateWithLifecycle()
     val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
     
+    val locationSelection = selectedChannel
+    val activeChannel = currentChannel
+    
     val (badgeText, badgeColor) = when {
-        currentChannel != null -> currentChannel!! to Color(0xFFFF9500)
-        CampChatManager.isCampChannel(context, selectedChannel) ->
+        activeChannel != null -> activeChannel to Color(0xFFFF9500)
+        CampChatManager.isCampChannel(context, locationSelection) ->
             CampChatManager.getDisplayName(context) to ChatColors.meshAccent
-        selectedChannel is com.neon.android.geohash.ChannelID.Location -> {
-            val geohash = selectedChannel.channel.geohash
+        locationSelection is com.neon.android.geohash.ChannelID.Location -> {
+            val geohash = locationSelection.channel.geohash
             "Локация" to Color(0xFF00C851)
         }
         else -> CampChatManager.getDisplayName(context) to ChatColors.meshAccent

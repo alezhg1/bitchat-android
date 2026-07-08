@@ -667,7 +667,7 @@ class ChatViewModel(
                 meshService.sendMessage(content, mentions, null)
                 campChannel?.let { channel ->
                     com.neon.android.geohash.CampChatManager.geoStorageKey(ctx)?.let { geoKey ->
-                        messageManager.addChannelMessage(geoKey, message, meshService.myPeerID)
+                        messageManager.addChannelMessage(geoKey, message)
                     }
                     geohashViewModel.sendGeohashMessage(
                         content,
