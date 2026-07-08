@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
@@ -33,7 +34,9 @@ import androidx.compose.ui.res.stringResource
 import com.neon.android.R
 import com.neon.android.core.ui.component.button.CloseButton
 import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
-import com.neon.android.net.TorMode
+import com.neon.android.identity.RoleQrRepository
+import com.neon.android.identity.UserProfileManager
+import com.neon.android.identity.UserRole
 import com.neon.android.net.TorPreferenceManager
 import com.neon.android.net.ArtiTorManager
 
@@ -114,6 +117,9 @@ fun AboutSheet(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     var showLogoutConfirm by remember { mutableStateOf(false) }
+    var showTeacherQr by remember { mutableStateOf(false) }
+    val userRole = remember { UserProfileManager.getInstance(context).getRole() }
+    val teacherQrPayload = remember { RoleQrRepository.teacherQrPayload(context) }
 
     val versionName = remember {
         try {
@@ -420,6 +426,41 @@ fun AboutSheet(
                         }
                     }
 
+                    if (userRole == UserRole.ADMIN) {
+                        item(key = "teacher_qr") {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                color = colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        "Роли · QR преподавателя",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "Покажите QR будущему преподавателю при входе. Пароль вручную не нужен.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Button(
+                                        onClick = { showTeacherQr = true },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Filled.QrCode2, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Показать QR преподавателя")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (onShowDebug != null) {
                         item(key = "debug") {
                             TextButton(
@@ -477,6 +518,13 @@ fun AboutSheet(
             }
         }
     }
+
+    RoleQrDisplaySheet(
+        isPresented = showTeacherQr,
+        role = UserRole.TEACHER,
+        qrPayload = teacherQrPayload,
+        onDismiss = { showTeacherQr = false }
+    )
 
     if (showLogoutConfirm) {
         AlertDialog(

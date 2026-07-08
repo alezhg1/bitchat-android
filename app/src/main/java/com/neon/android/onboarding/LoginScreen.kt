@@ -2,8 +2,9 @@ package com.neon.android.onboarding
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,10 +13,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neon.android.identity.RoleKeyManager
 import com.neon.android.identity.UserRole
+import com.neon.android.ui.RoleQrScannerSheet
 
 @Composable
 fun LoginScreen(
@@ -28,11 +29,26 @@ fun LoginScreen(
 
     var fio by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
-    var secretKey by remember { mutableStateOf("") }
     var fioError by remember { mutableStateOf<String?>(null) }
-    var keyError by remember { mutableStateOf<String?>(null) }
+    var qrError by remember { mutableStateOf<String?>(null) }
+    var showQrScanner by remember { mutableStateOf(false) }
+    var qrUnlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
 
-    val needsSecretKey = selectedRole != UserRole.STUDENT
+    val needsQrGrant = selectedRole != UserRole.STUDENT
+    val hasQrGrant = selectedRole in qrUnlockedRoles
+
+    if (showQrScanner && needsQrGrant) {
+        RoleQrScannerSheet(
+            isPresented = true,
+            expectedRole = selectedRole,
+            onDismiss = { showQrScanner = false },
+            onScanned = { role ->
+                qrUnlockedRoles = qrUnlockedRoles + role
+                qrError = null
+                showQrScanner = false
+            }
+        )
+    }
 
     Column(
         modifier = modifier
@@ -49,7 +65,7 @@ fun LoginScreen(
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Укажите ФИО и роль для входа в мессенджер",
+            text = "Укажите ФИО и роль. Админ и преподаватель входят через QR-код.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -64,9 +80,9 @@ fun LoginScreen(
             supportingText = fioError?.let { { Text(it) } },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Done
             )
         )
 
@@ -79,10 +95,7 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text("Static ID", style = MaterialTheme.typography.labelMedium)
-                    Text(
-                        staticIdPreview,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text(staticIdPreview, style = MaterialTheme.typography.bodyMedium)
                     Text(
                         "Неизменяемый идентификатор устройства",
                         style = MaterialTheme.typography.bodySmall,
@@ -105,29 +118,52 @@ fun LoginScreen(
                     selected = selectedRole == role,
                     onClick = {
                         selectedRole = role
-                        keyError = null
-                        if (role == UserRole.STUDENT) secretKey = ""
+                        qrError = null
                     }
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(role.displayNameRu)
+                if (role != UserRole.STUDENT && role in qrUnlockedRoles) {
+                    Spacer(Modifier.width(8.dp))
+                    Text("✓ QR", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
-        if (needsSecretKey) {
+        if (needsQrGrant) {
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = secretKey,
-                onValueChange = { secretKey = it; keyError = null },
-                label = { Text("Секретный ключ") },
-                placeholder = { Text("Ключ для роли «${selectedRole.displayNameRu}»") },
-                singleLine = true,
-                isError = keyError != null,
-                supportingText = keyError?.let { { Text(it) } },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-            )
+            OutlinedButton(
+                onClick = {
+                    qrError = null
+                    showQrScanner = true
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (hasQrGrant) "QR подтверждён · сканировать снова"
+                    else when (selectedRole) {
+                        UserRole.ADMIN -> "Сканировать QR администратора"
+                        UserRole.TEACHER -> "Сканировать QR от администратора"
+                        else -> "Сканировать QR"
+                    }
+                )
+            }
+            if (!hasQrGrant) {
+                Text(
+                    when (selectedRole) {
+                        UserRole.TEACHER -> "Преподавателем можно стать только через QR, который показывает администратор."
+                        UserRole.ADMIN -> "QR администратора выдаёт оператор лагеря (распечатка или экран)."
+                        else -> ""
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            qrError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -137,21 +173,18 @@ fun LoginScreen(
                     fioError = "Введите ФИО (минимум 2 символа)"
                     return@Button
                 }
-                if (needsSecretKey) {
-                    if (secretKey.isBlank()) {
-                        keyError = "Введите секретный ключ"
-                        return@Button
-                    }
-                    if (!roleKeyManager.matchesRoleKey(selectedRole, secretKey)) {
-                        keyError = "Неверный ключ"
-                        return@Button
-                    }
-                    roleKeyManager.verifyAndGrant(selectedRole, secretKey)
+                if (needsQrGrant && !hasQrGrant) {
+                    qrError = "Сначала отсканируйте QR для роли «${selectedRole.displayNameRu}»"
+                    return@Button
+                }
+                if (needsQrGrant && roleKeyManager.grantedRole() != selectedRole) {
+                    qrError = "QR не подтверждён для этой роли"
+                    return@Button
                 }
                 onLogin(fio.trim(), selectedRole)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = fio.isNotBlank()
+            enabled = fio.isNotBlank() && (!needsQrGrant || hasQrGrant)
         ) {
             Text("Войти")
         }

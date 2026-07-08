@@ -88,6 +88,12 @@ class RoleKeyManager private constructor(context: Context) {
         }
     }
 
+    /** Parse a scanned role QR and persist the grant if valid. */
+    fun grantFromQrPayload(raw: String): UserRole? {
+        val (role, key) = RoleQrCodec.decode(raw) ?: return null
+        return if (verifyAndGrant(role, key)) role else null
+    }
+
     fun grantedRole(): UserRole =
         UserRole.fromString(prefs.getString(KEY_VERIFIED_ROLE, null))
 

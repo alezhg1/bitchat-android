@@ -3,6 +3,8 @@ package com.neon.android.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neon.android.identity.RoleKeyManager
 import com.neon.android.identity.UserProfileManager
@@ -29,23 +30,21 @@ fun ProfileSetupScreen(
   var fio by remember { mutableStateOf(profileManager.getFio().takeIf { it != "Пользователь" } ?: "") }
   var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
   var fioError by remember { mutableStateOf<String?>(null) }
+  var qrError by remember { mutableStateOf<String?>(null) }
+  var showQrScanner by remember { mutableStateOf(false) }
+  var qrUnlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
 
-  // Secret-key dialog state for elevated roles
-  var pendingRole by remember { mutableStateOf<UserRole?>(null) }
-  var secretKey by remember { mutableStateOf("") }
-  var keyError by remember { mutableStateOf<String?>(null) }
-  // Roles already unlocked in this setup session (persisted encrypted on success)
-  var unlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
-
-  fun selectRole(role: UserRole) {
-    if (role == UserRole.STUDENT || role in unlockedRoles) {
-      selectedRole = role
-    } else {
-      // Require secret key before granting the elevated role
-      pendingRole = role
-      secretKey = ""
-      keyError = null
-    }
+  if (showQrScanner && selectedRole != UserRole.STUDENT) {
+    RoleQrScannerSheet(
+      isPresented = true,
+      expectedRole = selectedRole,
+      onDismiss = { showQrScanner = false },
+      onScanned = { role ->
+        qrUnlockedRoles = qrUnlockedRoles + role
+        qrError = null
+        showQrScanner = false
+      }
+    )
   }
 
   Column(
@@ -63,7 +62,7 @@ fun ProfileSetupScreen(
     )
     Spacer(Modifier.height(8.dp))
     Text(
-      "Укажите ФИО и роль. Static ID назначается автоматически и не может быть изменён.",
+      "Укажите ФИО и роль. Админ и преподаватель — только через QR.",
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant
     )
@@ -95,11 +94,6 @@ fun ProfileSetupScreen(
           fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.Medium
         )
-        Text(
-          "Неизменяемый идентификатор",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
       }
     }
 
@@ -116,15 +110,28 @@ fun ProfileSetupScreen(
       ) {
         RadioButton(
           selected = selectedRole == role,
-          onClick = { selectRole(role) }
+          onClick = { selectedRole = role; qrError = null }
         )
         Spacer(Modifier.width(8.dp))
         Text(role.displayNameRu)
-        if (role != UserRole.STUDENT && role in unlockedRoles) {
+        if (role != UserRole.STUDENT && role in qrUnlockedRoles) {
           Spacer(Modifier.width(8.dp))
-          Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+          Text("✓ QR", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         }
       }
+    }
+
+    if (selectedRole != UserRole.STUDENT) {
+      Spacer(Modifier.height(12.dp))
+      OutlinedButton(
+        onClick = { showQrScanner = true },
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text("Сканировать QR · ${selectedRole.displayNameRu}")
+      }
+      qrError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 
     Spacer(Modifier.height(32.dp))
@@ -135,54 +142,16 @@ fun ProfileSetupScreen(
           fioError = "Введите ФИО (минимум 2 символа)"
           return@Button
         }
+        if (selectedRole != UserRole.STUDENT && selectedRole !in qrUnlockedRoles) {
+          qrError = "Сначала отсканируйте QR"
+          return@Button
+        }
         onComplete(fio.trim(), selectedRole)
       },
-      modifier = Modifier.fillMaxWidth()
+      modifier = Modifier.fillMaxWidth(),
+      enabled = selectedRole == UserRole.STUDENT || selectedRole in qrUnlockedRoles
     ) {
       Text("Продолжить")
     }
-  }
-
-  val requestedRole = pendingRole
-  if (requestedRole != null) {
-    AlertDialog(
-      onDismissRequest = { pendingRole = null },
-      title = { Text("Секретный ключ: ${requestedRole.displayNameRu}") },
-      text = {
-        Column {
-          Text(
-            "Введите секретный ключ роли «${requestedRole.displayNameRu}».",
-            style = MaterialTheme.typography.bodyMedium
-          )
-          Spacer(Modifier.height(12.dp))
-          OutlinedTextField(
-            value = secretKey,
-            onValueChange = { secretKey = it; keyError = null },
-            label = { Text("Секретный ключ") },
-            singleLine = true,
-            isError = keyError != null,
-            supportingText = keyError?.let { { Text(it) } },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-          )
-        }
-      },
-      confirmButton = {
-        TextButton(onClick = {
-          if (roleKeyManager.verifyAndGrant(requestedRole, secretKey)) {
-            unlockedRoles = unlockedRoles + requestedRole
-            selectedRole = requestedRole
-            pendingRole = null
-          } else {
-            keyError = "Неверный ключ"
-          }
-        }) {
-          Text("Подтвердить")
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { pendingRole = null }) { Text("Отмена") }
-      }
-    )
   }
 }
