@@ -404,34 +404,22 @@ fun CommandSuggestionItem(
 
         Text(
             text = allCommands.joinToString(", "),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium
-            ),
-            color = colorScheme.primary,
-            fontSize = (BASE_FONT_SIZE - 4).sp
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+            color = colorScheme.primary
         )
 
-        // Show syntax if any
         suggestion.syntax?.let { syntax ->
             Text(
                 text = syntax,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = FontFamily.Monospace
-                ),
-                color = colorScheme.onSurface.copy(alpha = 0.8f),
-                fontSize = (BASE_FONT_SIZE - 5).sp
+                style = MaterialTheme.typography.bodySmall,
+                color = colorScheme.onSurface.copy(alpha = 0.8f)
             )
         }
 
-        // Show description
         Text(
             text = suggestion.description,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace
-            ),
+            style = MaterialTheme.typography.bodySmall,
             color = colorScheme.onSurface.copy(alpha = 0.7f),
-            fontSize = (BASE_FONT_SIZE - 5).sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -478,23 +466,16 @@ fun MentionSuggestionItem(
     ) {
         Text(
             text = stringResource(R.string.mention_suggestion_at, suggestion),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = Color(0xFFFF9500), // Orange like mentions
-            fontSize = (BASE_FONT_SIZE - 4).sp
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+            color = Color(0xFFFF9500)
         )
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
+
         Text(
             text = stringResource(R.string.mention),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace
-            ),
-            color = colorScheme.onSurface.copy(alpha = 0.7f),
-            fontSize = (BASE_FONT_SIZE - 5).sp
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurface.copy(alpha = 0.7f)
         )
     }
 }
