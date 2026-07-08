@@ -156,6 +156,48 @@ fun formatMessageAsAnnotatedString(
     return builder.toAnnotatedString()
 }
 
+/** Message body only — for messenger-style bubbles (no IRC-style sender prefix). */
+fun formatBubbleContentAnnotatedString(
+    message: BitchatMessage,
+    currentUserNickname: String,
+    meshService: BluetoothMeshService,
+    colorScheme: ColorScheme,
+    isSelf: Boolean
+): AnnotatedString {
+    val builder = AnnotatedString.Builder()
+    val isDark = colorScheme.background.red + colorScheme.background.green + colorScheme.background.blue < 1.5f
+    val contentColor = if (isSelf) {
+        com.neon.android.ui.theme.ChatColors.selfBubbleContent
+    } else {
+        com.neon.android.ui.theme.ChatColors.peerBubbleContent
+    }
+    appendIOSFormattedContent(
+        builder,
+        message.content,
+        message.mentions,
+        currentUserNickname,
+        contentColor,
+        isSelf,
+        isDark
+    )
+    return builder.toAnnotatedString()
+}
+
+fun formatBubbleSenderLabel(message: BitchatMessage): String {
+    if (message.sender == "system") return "Система"
+    val (baseName, suffix) = splitSuffix(message.sender)
+    return truncateNickname(baseName) + suffix
+}
+
+fun isMessageFromSelf(
+    message: BitchatMessage,
+    currentUserNickname: String,
+    meshService: BluetoothMeshService
+): Boolean =
+    message.senderPeerID == meshService.myPeerID ||
+        message.sender == currentUserNickname ||
+        message.sender.startsWith("$currentUserNickname#")
+
 /**
  * Build only the nickname + timestamp header line for a message, matching styles of normal messages.
  */

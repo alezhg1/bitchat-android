@@ -111,9 +111,9 @@ fun MessagesList(
     
     LazyColumn(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.background(ChatColors.chatBackground),
         reverseLayout = true
     ) {
         items(
@@ -147,54 +147,21 @@ fun MessageItem(
     onImageClick: ((String, List<String>, Int) -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val timeFormatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                // Provide a small end padding for own private messages so overlay doesn't cover text
-                val endPad = if (message.isPrivate && message.sender == currentUserNickname) 16.dp else 0.dp
-                // Create a custom layout that combines selectable text with clickable nickname areas
-                MessageTextWithClickableNicknames(
-                    message = message,
-                    messages = messages,
-                    currentUserNickname = currentUserNickname,
-                    meshService = meshService,
-                    colorScheme = colorScheme,
-                    timeFormatter = timeFormatter,
-                    onNicknameClick = onNicknameClick,
-                    onMessageLongPress = onMessageLongPress,
-                    onCancelTransfer = onCancelTransfer,
-                    onImageClick = onImageClick,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = endPad)
-                )
-            }
-
-            // Delivery status for private messages (overlay, non-displacing)
-            if (message.isPrivate && message.sender == currentUserNickname) {
-                message.deliveryStatus?.let { status ->
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 2.dp)
-                    ) {
-                        DeliveryStatusIcon(status = status)
-                    }
-                }
-            }
-        }
-        
-        // Link previews removed; links are now highlighted inline and clickable within the message text
-    }
+    MessageTextWithClickableNicknames(
+        message = message,
+        messages = messages,
+        currentUserNickname = currentUserNickname,
+        meshService = meshService,
+        colorScheme = colorScheme,
+        timeFormatter = timeFormatter,
+        onNicknameClick = onNicknameClick,
+        onMessageLongPress = onMessageLongPress,
+        onCancelTransfer = onCancelTransfer,
+        onImageClick = onImageClick,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -367,116 +334,202 @@ fun MessageItem(
             modifier = modifier
         )
     } else {
-        // Normal message display
-        val annotatedText = formatMessageAsAnnotatedString(
+        val isSelf = isMessageFromSelf(message, currentUserNickname, meshService)
+        val isSystem = message.sender == "system"
+        val showSenderName = !isSelf && !isSystem && !message.isPrivate
+
+        if (isSystem) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                ) {
+                    Text(
+                        text = message.content,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            return
+        }
+
+        val bubbleContent = formatBubbleContentAnnotatedString(
             message = message,
             currentUserNickname = currentUserNickname,
             meshService = meshService,
             colorScheme = colorScheme,
-            timeFormatter = timeFormatter
+            isSelf = isSelf
         )
-        
-        // Check if this message was sent by self to avoid click interactions on own nickname
-        val isSelf = message.senderPeerID == meshService.myPeerID || 
-                     message.sender == currentUserNickname ||
-                     message.sender.startsWith("$currentUserNickname#")
-        
+
         val haptic = LocalHapticFeedback.current
         val context = LocalContext.current
         var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start
+
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = if (isSelf) Alignment.End else Alignment.Start
         ) {
-            Surface(
-                shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = if (isSelf) 16.dp else 4.dp,
-                    bottomEnd = if (isSelf) 4.dp else 16.dp
-                ),
-                color = if (isSelf) ChatColors.selfBubble else ChatColors.peerBubble,
-                modifier = Modifier.widthIn(max = 320.dp)
-            ) {
+            if (showSenderName) {
                 Text(
-                    text = annotatedText,
-                    modifier = modifier.pointerInput(message) {
-                detectTapGestures(
-                    onTap = { position ->
-                        val layout = textLayoutResult ?: return@detectTapGestures
-                        val offset = layout.getOffsetForPosition(position)
-                        // Nickname click only when not self
-                        if (!isSelf && onNicknameClick != null) {
-                            val nicknameAnnotations = annotatedText.getStringAnnotations(
-                                tag = "nickname_click",
-                                start = offset,
-                                end = offset
+                    text = formatBubbleSenderLabel(message),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = ChatColors.senderName,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(start = 6.dp, bottom = 2.dp, end = 6.dp)
+                        .then(
+                            if (onNicknameClick != null) {
+                                Modifier.pointerInput(message.id) {
+                                    detectTapGestures(onTap = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onNicknameClick.invoke(message.originalSender ?: message.sender)
+                                    })
+                                }
+                            } else Modifier
+                        )
+                )
+            }
+
+            Row(
+                horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 18.dp,
+                        topEnd = 18.dp,
+                        bottomStart = if (isSelf) 18.dp else 4.dp,
+                        bottomEnd = if (isSelf) 4.dp else 18.dp
+                    ),
+                    color = if (isSelf) ChatColors.selfBubble else ChatColors.peerBubble,
+                    shadowElevation = if (isSelf) 0.dp else 1.dp,
+                    modifier = Modifier.widthIn(max = 300.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = bubbleContent,
+                            modifier = Modifier.pointerInput(message) {
+                                detectTapGestures(
+                                    onTap = { position ->
+                                        val layout = textLayoutResult ?: return@detectTapGestures
+                                        val offset = layout.getOffsetForPosition(position)
+                                        if (!isSelf && onNicknameClick != null) {
+                                            val nicknameAnnotations = bubbleContent.getStringAnnotations(
+                                                tag = "nickname_click",
+                                                start = offset,
+                                                end = offset
+                                            )
+                                            if (nicknameAnnotations.isNotEmpty()) {
+                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                onNicknameClick.invoke(nicknameAnnotations.first().item)
+                                                return@detectTapGestures
+                                            }
+                                        }
+                                        val geohashAnnotations = bubbleContent.getStringAnnotations(
+                                            tag = "geohash_click",
+                                            start = offset,
+                                            end = offset
+                                        )
+                                        if (geohashAnnotations.isNotEmpty()) {
+                                            val geohash = geohashAnnotations.first().item
+                                            try {
+                                                val locationManager =
+                                                    com.neon.android.geohash.LocationChannelManager.getInstance(context)
+                                                val level = when (geohash.length) {
+                                                    in 0..2 -> com.neon.android.geohash.GeohashChannelLevel.REGION
+                                                    in 3..4 -> com.neon.android.geohash.GeohashChannelLevel.PROVINCE
+                                                    5 -> com.neon.android.geohash.GeohashChannelLevel.CITY
+                                                    6 -> com.neon.android.geohash.GeohashChannelLevel.NEIGHBORHOOD
+                                                    else -> com.neon.android.geohash.GeohashChannelLevel.BLOCK
+                                                }
+                                                val channel = com.neon.android.geohash.GeohashChannel(
+                                                    level,
+                                                    geohash.lowercase()
+                                                )
+                                                locationManager.setTeleported(true)
+                                                locationManager.select(
+                                                    com.neon.android.geohash.ChannelID.Location(channel)
+                                                )
+                                            } catch (_: Exception) { }
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            return@detectTapGestures
+                                        }
+                                        val urlAnnotations = bubbleContent.getStringAnnotations(
+                                            tag = "url_click",
+                                            start = offset,
+                                            end = offset
+                                        )
+                                        if (urlAnnotations.isNotEmpty()) {
+                                            val raw = urlAnnotations.first().item
+                                            val resolved = if (
+                                                raw.startsWith("http://", ignoreCase = true) ||
+                                                raw.startsWith("https://", ignoreCase = true)
+                                            ) raw else "https://$raw"
+                                            try {
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resolved))
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) { }
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        }
+                                    },
+                                    onLongPress = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onMessageLongPress?.invoke(message)
+                                    }
+                                )
+                            },
+                            softWrap = true,
+                            overflow = TextOverflow.Visible,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (isSelf) ChatColors.selfBubbleContent else ChatColors.peerBubbleContent
+                            ),
+                            onTextLayout = { result -> textLayoutResult = result }
+                        )
+                        Row(
+                            modifier = Modifier.align(Alignment.End),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            message.powDifficulty?.let { bits ->
+                                if (bits > 0) {
+                                    Text(
+                                        text = "⛨${bits}b",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isSelf) {
+                                            ChatColors.selfBubbleContent.copy(alpha = 0.75f)
+                                        } else {
+                                            ChatColors.timestamp
+                                        }
+                                    )
+                                }
+                            }
+                            Text(
+                                text = timeFormatter.format(message.timestamp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isSelf) {
+                                    ChatColors.selfBubbleContent.copy(alpha = 0.75f)
+                                } else {
+                                    ChatColors.timestamp
+                                }
                             )
-                            if (nicknameAnnotations.isNotEmpty()) {
-                                val nickname = nicknameAnnotations.first().item
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onNicknameClick.invoke(nickname)
-                                return@detectTapGestures
+                            if (message.isPrivate && isSelf) {
+                                message.deliveryStatus?.let { status ->
+                                    DeliveryStatusIcon(status = status)
+                                }
                             }
                         }
-                        // Geohash teleport (all messages)
-                        val geohashAnnotations = annotatedText.getStringAnnotations(
-                            tag = "geohash_click",
-                            start = offset,
-                            end = offset
-                        )
-                        if (geohashAnnotations.isNotEmpty()) {
-                            val geohash = geohashAnnotations.first().item
-                            try {
-                                val locationManager = com.neon.android.geohash.LocationChannelManager.getInstance(
-                                    context
-                                )
-                                val level = when (geohash.length) {
-                                    in 0..2 -> com.neon.android.geohash.GeohashChannelLevel.REGION
-                                    in 3..4 -> com.neon.android.geohash.GeohashChannelLevel.PROVINCE
-                                    5 -> com.neon.android.geohash.GeohashChannelLevel.CITY
-                                    6 -> com.neon.android.geohash.GeohashChannelLevel.NEIGHBORHOOD
-                                    else -> com.neon.android.geohash.GeohashChannelLevel.BLOCK
-                                }
-                                val channel = com.neon.android.geohash.GeohashChannel(level, geohash.lowercase())
-                                locationManager.setTeleported(true)
-                                locationManager.select(com.neon.android.geohash.ChannelID.Location(channel))
-                            } catch (_: Exception) { }
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            return@detectTapGestures
-                        }
-                        // URL open (all messages)
-                        val urlAnnotations = annotatedText.getStringAnnotations(
-                            tag = "url_click",
-                            start = offset,
-                            end = offset
-                        )
-                        if (urlAnnotations.isNotEmpty()) {
-                            val raw = urlAnnotations.first().item
-                            val resolved = if (raw.startsWith("http://", ignoreCase = true) || raw.startsWith("https://", ignoreCase = true)) raw else "https://$raw"
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resolved))
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                context.startActivity(intent)
-                            } catch (_: Exception) { }
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            return@detectTapGestures
-                        }
-                    },
-                    onLongPress = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onMessageLongPress?.invoke(message)
                     }
-                )
-            },
-            fontFamily = FontFamily.Monospace,
-            softWrap = true,
-            overflow = TextOverflow.Visible,
-            style = androidx.compose.ui.text.TextStyle(
-                color = colorScheme.onSurface
-            ),
-            onTextLayout = { result -> textLayoutResult = result }
-                )
+                }
             }
         }
     }
@@ -490,16 +543,15 @@ fun DeliveryStatusIcon(status: DeliveryStatus) {
         is DeliveryStatus.Sending -> {
             Text(
                 text = stringResource(R.string.status_sending),
-                fontSize = 10.sp,
-                color = colorScheme.primary.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.labelSmall,
+                color = ChatColors.selfBubbleContent.copy(alpha = 0.7f)
             )
         }
         is DeliveryStatus.Sent -> {
-            // Use a subtle hollow marker for Sent; single check is reserved for Delivered (iOS parity)
             Text(
                 text = stringResource(R.string.status_pending),
-                fontSize = 10.sp,
-                color = colorScheme.primary.copy(alpha = 0.6f)
+                style = MaterialTheme.typography.labelSmall,
+                color = ChatColors.selfBubbleContent.copy(alpha = 0.7f)
             )
         }
         is DeliveryStatus.Delivered -> {

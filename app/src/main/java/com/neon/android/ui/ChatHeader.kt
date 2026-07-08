@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neon.android.core.ui.utils.singleOrTripleClickable
 import com.neon.android.ui.theme.ChatColors
+import com.neon.android.ui.theme.ChatAvatar
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -133,8 +134,7 @@ fun NicknameEditor(
             value = value,
             onValueChange = onValueChange,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = colorScheme.primary,
-                fontFamily = FontFamily.Monospace
+                color = colorScheme.primary
             ),
             cursorBrush = SolidColor(colorScheme.primary),
             singleLine = true,
@@ -352,143 +352,107 @@ private fun MainHeader(
     val isConnected by viewModel.isConnected.collectAsStateWithLifecycle()
     val selectedLocationChannel by viewModel.selectedLocationChannel.collectAsStateWithLifecycle()
     val geohashPeople by viewModel.geohashPeople.collectAsStateWithLifecycle()
+    val currentChannel by viewModel.currentChannel.collectAsStateWithLifecycle()
 
-    // Bookmarks store for current geohash toggle (iOS parity)
     val context = androidx.compose.ui.platform.LocalContext.current
-    val bookmarksStore = remember { com.neon.android.geohash.GeohashBookmarksStore.getInstance(context) }
-    val bookmarks by bookmarksStore.bookmarks.collectAsStateWithLifecycle()
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.weight(1f, fill = false)
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .singleOrTripleClickable(
+                    onSingleClick = onTitleClick,
+                    onTripleClick = onTripleTitleClick
+                ),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            ChatAvatar(
+                name = fio.ifBlank { nickname },
+                accentColor = colorScheme.primary,
+                size = 40.dp
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
-                    text = stringResource(R.string.app_brand),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = colorScheme.primary,
-                    modifier = Modifier.singleOrTripleClickable(
-                        onSingleClick = onTitleClick,
-                        onTripleClick = onTripleTitleClick
-                    )
+                    text = fio.ifBlank { nickname },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorScheme.onSurface,
+                    maxLines = 1
                 )
-                Spacer(modifier = Modifier.width(6.dp))
-                NicknameEditor(
-                    value = fio.ifBlank { nickname },
-                    onValueChange = onFioChange
-                )
-            }
-            if (staticId.isNotBlank()) {
+                val subtitle = when {
+                    currentChannel != null -> "Канал · $currentChannel"
+                    selectedLocationChannel is com.neon.android.geohash.ChannelID.Location ->
+                        "Локационный чат · ${(selectedLocationChannel as com.neon.android.geohash.ChannelID.Location).channel.geohash.take(8)}…"
+                    else -> {
+                        val count = connectedPeers.filter { it != viewModel.meshService.myPeerID }.size
+                        if (isConnected && count > 0) "$count в сети" else "Ожидание подключений"
+                    }
+                }
                 Text(
-                    text = "ID: $staticId",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = FontFamily.Monospace,
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
                     color = colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
             }
         }
-        
-        // Right section
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-
             if (hasUnreadPrivateMessages.isNotEmpty()) {
-                Icon(
-                    imageVector = Icons.Filled.Email,
-                    contentDescription = stringResource(R.string.cd_unread_private_messages),
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable { viewModel.openLatestUnreadPrivateChat() },
-                    tint = Color(0xFFFF9500)
-                )
-            }
-
-            // Chats list button
-            TextButton(
-                onClick = onChatsClick,
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-                Text("Чаты", color = ChatColors.meshAccent, style = MaterialTheme.typography.labelLarge)
-            }
-
-            // Map button for admin/teacher
-            val role = remember { com.neon.android.identity.UserProfileManager.getInstance(context).getRole() }
-            if (role.canViewMap()) {
-                IconButton(onClick = onMapClick, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Filled.Map,
-                        contentDescription = "Карта",
-                        tint = Color(0xFFE53935),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-                CurrentChatBadge(
-                    viewModel = viewModel,
-                    onClick = onLocationChannelsClick
-                )
-
-                // Bookmark toggle for current geohash (not shown for mesh)
-                val currentGeohash: String? = when (val sc = selectedLocationChannel) {
-                    is com.neon.android.geohash.ChannelID.Location -> sc.channel.geohash
-                    else -> null
-                }
-                if (currentGeohash != null) {
-                    val isBookmarked = bookmarks.contains(currentGeohash)
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 2.dp) // minimal gap between geohash and bookmark
-                            .size(20.dp)
-                            .clickable { bookmarksStore.toggle(currentGeohash) },
-                        contentAlignment = Alignment.Center
+                BadgedBox(
+                    badge = {
+                        Badge(containerColor = ChatColors.unreadBadge) {
+                            Text(hasUnreadPrivateMessages.size.toString())
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = { viewModel.openLatestUnreadPrivateChat() },
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = stringResource(R.string.cd_toggle_bookmark),
-                            tint = if (isBookmarked) Color(0xFF00C851) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                            modifier = Modifier.size(16.dp)
+                            imageVector = Icons.Filled.Email,
+                            contentDescription = stringResource(R.string.cd_unread_private_messages),
+                            tint = ChatColors.channelAccent
                         )
                     }
                 }
             }
 
-            // Location Notes button (extracted to separate component)
-            LocationNotesButton(
-                viewModel = viewModel,
-                onClick = onLocationNotesClick
-            )
+            IconButton(onClick = onChatsClick, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.Chat,
+                    contentDescription = "Чаты",
+                    tint = ChatColors.meshAccent
+                )
+            }
 
-            // Tor status dot when Tor is enabled
-            TorStatusDot(
-                modifier = Modifier
-                    .size(8.dp)
-                    .padding(start = 0.dp, end = 2.dp)
-            )
-            
-            // PoW status indicator
-            PoWStatusIndicator(
-                modifier = Modifier,
-                style = PoWIndicatorStyle.COMPACT
-            )
-            Spacer(modifier = Modifier.width(2.dp))
-            PeerCounter(
-                connectedPeers = connectedPeers.filter { it != viewModel.meshService.myPeerID },
-                joinedChannels = joinedChannels,
-                hasUnreadChannels = hasUnreadChannels,
-                isConnected = isConnected,
-                selectedLocationChannel = selectedLocationChannel,
-                geohashPeople = geohashPeople,
-                onClick = onSidebarClick
-            )
+            val role = remember { com.neon.android.identity.UserProfileManager.getInstance(context).getRole() }
+            if (role.canViewMap()) {
+                IconButton(onClick = onMapClick, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Map,
+                        contentDescription = "Карта",
+                        tint = Color(0xFFE53935)
+                    )
+                }
+            }
+
+            IconButton(onClick = onSidebarClick, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.People,
+                    contentDescription = "Участники",
+                    tint = colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -522,9 +486,7 @@ private fun CurrentChatBadge(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = badgeText,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = FontFamily.Monospace
-                ),
+                style = MaterialTheme.typography.labelLarge,
                 color = badgeColor,
                 maxLines = 1
             )

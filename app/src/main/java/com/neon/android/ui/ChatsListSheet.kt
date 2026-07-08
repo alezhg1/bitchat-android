@@ -21,6 +21,7 @@ import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
 import com.neon.android.core.ui.component.sheet.BitchatSheetTopBar
 import com.neon.android.core.ui.component.sheet.BitchatSheetTitle
 import com.neon.android.ui.theme.ChatColors
+import com.neon.android.ui.theme.ChatAvatar
 
 data class ChatListItem(
   val id: String,
@@ -184,12 +185,6 @@ private fun ChatListRow(
   isActive: Boolean,
   onClick: () -> Unit
 ) {
-  val icon = when (item.type) {
-    ChatListItemType.MESH -> Icons.Default.Chat
-    ChatListItemType.LOCATION -> Icons.Default.LocationOn
-    ChatListItemType.CHANNEL -> Icons.Default.Tag
-    ChatListItemType.PRIVATE -> Icons.Default.Person
-  }
   Surface(
     modifier = Modifier
       .fillMaxWidth()
@@ -206,21 +201,38 @@ private fun ChatListRow(
       modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Icon(icon, contentDescription = null, tint = item.accentColor, modifier = Modifier.size(22.dp))
+      ChatAvatar(
+        name = item.title,
+        accentColor = item.accentColor,
+        size = 46.dp
+      )
       Spacer(Modifier.width(12.dp))
       Column(modifier = Modifier.weight(1f)) {
-        Text(item.title, fontWeight = FontWeight.SemiBold, color = item.accentColor)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                item.title,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.weight(1f)
+            )
+            if (item.unreadCount > 0) {
+                Badge(containerColor = ChatColors.unreadBadge) {
+                    Text(item.unreadCount.toString())
+                }
+            }
+        }
         Text(
           item.subtitle,
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           maxLines = 1
         )
-      }
-      if (item.unreadCount > 0) {
-        Badge(containerColor = ChatColors.unreadBadge) {
-          Text(item.unreadCount.toString())
-        }
       }
     }
   }

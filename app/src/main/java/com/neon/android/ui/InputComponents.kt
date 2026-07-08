@@ -37,7 +37,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.withStyle
-import com.neon.android.ui.theme.BASE_FONT_SIZE
+import com.neon.android.ui.theme.ChatColors
 import com.neon.android.features.voice.normalizeAmplitudeSample
 import com.neon.android.features.voice.AudioWaveformExtractor
 import com.neon.android.ui.media.RealtimeScrollingWaveform
@@ -60,36 +60,27 @@ class SlashCommandVisualTransformation : VisualTransformation {
             var lastIndex = 0
 
             slashCommandRegex.findAll(text.text).forEach { match ->
-                // Add text before the match
                 if (match.range.first > lastIndex) {
                     append(text.text.substring(lastIndex, match.range.first))
                 }
-
-                // Add the styled slash command
                 withStyle(
                     style = SpanStyle(
-                        color = Color(0xFF00FF7F), // Bright green
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Medium,
-                        background = Color(0xFF2D2D2D) // Dark gray background
+                        color = Color(0xFF00C851),
+                        fontWeight = FontWeight.SemiBold,
+                        background = Color(0xFFE8F5E9)
                     )
                 ) {
                     append(match.value)
                 }
-
                 lastIndex = match.range.last + 1
             }
 
-            // Add remaining text
             if (lastIndex < text.text.length) {
                 append(text.text.substring(lastIndex))
             }
         }
 
-        return TransformedText(
-            text = annotatedString,
-            offsetMapping = OffsetMapping.Identity
-        )
+        return TransformedText(text = annotatedString, offsetMapping = OffsetMapping.Identity)
     }
 }
 
@@ -112,8 +103,7 @@ class MentionVisualTransformation : VisualTransformation {
                 // Add the styled mention
                 withStyle(
                     style = SpanStyle(
-                        color = Color(0xFFFF9500), // Orange
-                        fontFamily = FontFamily.Monospace,
+                        color = Color(0xFFFF9500),
                         fontWeight = FontWeight.SemiBold
                     )
                 ) {
@@ -182,22 +172,28 @@ fun MessageInput(
     var elapsedMs by remember { mutableStateOf(0L) }
     var amplitude by remember { mutableStateOf(0) }
 
-    Row(
-        modifier = modifier.padding(horizontal = 12.dp, vertical = 8.dp), // Reduced padding
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = ChatColors.inputFieldFill,
+        tonalElevation = 0.dp
     ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
         // Text input with placeholder OR visualizer when recording
         Box(
             modifier = Modifier.weight(1f)
         ) {
-            // Always keep the text field mounted to retain focus and avoid IME collapse
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = colorScheme.primary,
-                    fontFamily = FontFamily.Monospace
+                    color = colorScheme.onSurface
                 ),
                 cursorBrush = SolidColor(if (isRecording) Color.Transparent else colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -219,10 +215,8 @@ fun MessageInput(
             if (value.text.isEmpty() && !isRecording) {
                 Text(
                     text = stringResource(R.string.type_a_message_placeholder),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    color = colorScheme.onSurface.copy(alpha = 0.5f), // Muted grey
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colorScheme.onSurface.copy(alpha = 0.45f),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -243,9 +237,8 @@ fun MessageInput(
                     val maxSs = maxSecs % 60
                     Text(
                         text = String.format("%02d:%02d / %02d:%02d", mm, ss, maxMm, maxSs),
-                        fontFamily = FontFamily.Monospace,
-                        color = colorScheme.primary,
-                        fontSize = (BASE_FONT_SIZE - 4).sp
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colorScheme.primary
                     )
                 }
             }
@@ -358,9 +351,8 @@ fun MessageInput(
                 }
             }
         }
+        }
     }
-
-    // Auto-stop handled inside VoiceRecordButton
 }
 
 @Composable

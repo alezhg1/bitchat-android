@@ -82,7 +82,6 @@ fun LoginScreen(
                     Text("Static ID", style = MaterialTheme.typography.labelMedium)
                     Text(
                         staticIdPreview,
-                        fontFamily = FontFamily.Monospace,
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(

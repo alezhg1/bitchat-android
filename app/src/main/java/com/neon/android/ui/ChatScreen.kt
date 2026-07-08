@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neon.android.model.BitchatMessage
+import com.neon.android.ui.theme.ChatColors
 import com.neon.android.ui.media.FullScreenImageViewer
 
 /**
@@ -383,11 +384,10 @@ fun ChatInputSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = colorScheme.background
+        color = ChatColors.inputBarSurface,
+        shadowElevation = 4.dp
     ) {
         Column {
-            HorizontalDivider(color = colorScheme.outline.copy(alpha = 0.3f))
-            // Command suggestions box
             if (showCommandSuggestions && commandSuggestions.isNotEmpty()) {
                 CommandSuggestionsBox(
                     suggestions = commandSuggestions,
@@ -446,7 +446,7 @@ private fun ChatFloatingHeader(
             .fillMaxWidth()
             .zIndex(1f)
             .windowInsetsPadding(WindowInsets.statusBars), // Extend into status bar area
-        color = colorScheme.background // Solid background color extending into status bar
+        color = ChatColors.headerSurface // Solid header
     ) {
         TopAppBar(
             title = {
