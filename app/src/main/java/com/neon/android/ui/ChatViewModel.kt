@@ -348,8 +348,10 @@ class ChatViewModel(
         val roleKeyManager = com.neon.android.identity.RoleKeyManager.getInstance(getApplication())
         val effectiveRole = when (role) {
             com.neon.android.identity.UserRole.STUDENT -> com.neon.android.identity.UserRole.STUDENT
-            else -> roleKeyManager.grantedRole().takeIf { it == role }
-                ?: com.neon.android.identity.UserRole.STUDENT
+            else -> {
+                val granted = roleKeyManager.grantedRole()
+                if (granted == role) role else com.neon.android.identity.UserRole.STUDENT
+            }
         }
         profileManager.setFio(fio)
         profileManager.setRole(effectiveRole)
@@ -358,6 +360,28 @@ class ChatViewModel(
         _fio.value = fio
         _staticId.value = profileManager.getStaticId() ?: meshService.myPeerID
         setNickname(fio)
+    }
+
+    /** Full logout: clears profile, role grant, nickname and in-memory chat state. */
+    fun logout() {
+        com.neon.android.geohash.LocationSharingService.getInstance(getApplication()).stop()
+        appReady = false
+        com.neon.android.identity.RoleKeyManager.getInstance(getApplication()).clearGrant()
+        profileManager.clearAccount()
+        dataManager.clearAllData()
+        messageManager.clearAllMessages()
+        channelManager.clearAllChannels()
+        privateChatManager.clearAllPrivateChats()
+        state.setNickname("")
+        _fio.value = ""
+        _staticId.value = meshService.myPeerID
+        viewModelScope.launch {
+            try {
+                com.neon.android.services.MessagePersistenceService
+                    .getInstance(getApplication())
+                    .clearAllPersistedMessages()
+            } catch (_: Exception) { }
+        }
     }
 
     fun isProfileSetupDone(): Boolean = profileManager.isProfileSetupDone()

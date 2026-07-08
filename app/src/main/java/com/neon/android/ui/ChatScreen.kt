@@ -38,7 +38,10 @@ import com.neon.android.ui.media.FullScreenImageViewer
  * - ChatUIUtils: Utility functions for formatting and colors
  */
 @Composable
-fun ChatScreen(viewModel: ChatViewModel) {
+fun ChatScreen(
+    viewModel: ChatViewModel,
+    onLogout: () -> Unit = {}
+) {
     val colorScheme = MaterialTheme.colorScheme
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val connectedPeers by viewModel.connectedPeers.collectAsStateWithLifecycle()
@@ -354,6 +357,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
         onSelectChannelChat = { viewModel.switchToChannel(it) },
         showMapScreen = showMapScreen,
         onMapScreenDismiss = { showMapScreen = false },
+        onLogout = onLogout,
     )
 }
 
@@ -511,6 +515,7 @@ private fun ChatDialogs(
     onSelectChannelChat: (String) -> Unit = {},
     showMapScreen: Boolean = false,
     onMapScreenDismiss: () -> Unit = {},
+    onLogout: () -> Unit = {},
 ) {
     val privateChatSheetPeer by viewModel.privateChatSheetPeer.collectAsStateWithLifecycle()
 
@@ -534,7 +539,11 @@ private fun ChatDialogs(
         staticId = staticId.ifBlank { viewModel.meshService.myPeerID },
         onNicknameChange = { viewModel.setFio(it) },
         onDismiss = onAppInfoDismiss,
-        onShowDebug = { showDebugSheet = true }
+        onShowDebug = { showDebugSheet = true },
+        onLogout = {
+            onAppInfoDismiss()
+            onLogout()
+        }
     )
     if (showDebugSheet) {
         com.neon.android.ui.debug.DebugSettingsSheet(

@@ -108,10 +108,12 @@ fun AboutSheet(
     onNicknameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onShowDebug: (() -> Unit)? = null,
+    onLogout: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    var showLogoutConfirm by remember { mutableStateOf(false) }
 
     val versionName = remember {
         try {
@@ -432,6 +434,21 @@ fun AboutSheet(
                             }
                         }
                     }
+
+                    if (onLogout != null) {
+                        item(key = "logout") {
+                            TextButton(
+                                onClick = { showLogoutConfirm = true },
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            ) {
+                                Text(
+                                    text = "Выйти из аккаунта",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = colorScheme.error
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Box(
@@ -459,6 +476,29 @@ fun AboutSheet(
                 }
             }
         }
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = { Text("Выйти из аккаунта?") },
+            text = {
+                Text("Будут удалены ФИО, роль и локальные переписки. Static ID устройства сохранится.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutConfirm = false
+                    onLogout?.invoke()
+                }) {
+                    Text("Выйти", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 }
 

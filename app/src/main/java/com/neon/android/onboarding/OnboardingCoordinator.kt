@@ -93,7 +93,10 @@ class OnboardingCoordinator(
 
         if (missingPermissions.isEmpty()) {
             if (shouldRequestBackgroundLocation()) {
-                onBackgroundLocationRequired()
+                activity.lifecycleScope.launch {
+                    kotlinx.coroutines.delay(100)
+                    onBackgroundLocationRequired()
+                }
             } else {
                 completeOnboarding()
             }
@@ -138,7 +141,11 @@ class OnboardingCoordinator(
             criticalGranted -> {
                 if (shouldRequestBackgroundLocation()) {
                     Log.d(TAG, "Foreground permissions granted; requesting background location next")
-                    onBackgroundLocationRequired()
+                    // Defer to the next frame so we are not still inside the permission callback stack.
+                    activity.lifecycleScope.launch {
+                        kotlinx.coroutines.delay(100)
+                        onBackgroundLocationRequired()
+                    }
                     return
                 }
                 if (allGranted) {

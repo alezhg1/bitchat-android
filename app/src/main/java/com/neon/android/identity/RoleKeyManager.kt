@@ -17,6 +17,12 @@ class RoleKeyManager private constructor(context: Context) {
         private const val PREFS_NAME = "role_grants"
         private const val KEY_VERIFIED_ROLE = "verified_role"
 
+        // SHA-256 of operator keys — plaintext keys are never stored in the app.
+        private const val ADMIN_KEY_HASH =
+            "b55d09fa6d34e9771fb5d8901f188e246fc55c9786fc938526490940c90abcd4"
+        private const val TEACHER_KEY_HASH =
+            "d5fb492e49e5e554e86ee646f04ce82b19e83354e000529d123482dd29070550"
+
         @Volatile
         private var INSTANCE: RoleKeyManager? = null
 
@@ -27,20 +33,26 @@ class RoleKeyManager private constructor(context: Context) {
         }
 
         private fun sha256Hex(input: String): String {
-            val digest = MessageDigest.getInstance("SHA-256").digest(input.trim().toByteArray(Charsets.UTF_8))
+            val digest = MessageDigest.getInstance("SHA-256")
+                .digest(input.toByteArray(Charsets.UTF_8))
             return digest.joinToString("") { "%02x".format(it) }
         }
+
+        fun normalizeKey(key: String): String =
+            key.trim().replace("\u200B", "").replace("\uFEFF", "")
     }
 
-    private val appContext = context.applicationContext
-    private val roleHashes: Map<UserRole, String> by lazy { RoleKeyAsset.loadHashes(appContext) }
+    private val roleHashes: Map<UserRole, String> = mapOf(
+        UserRole.ADMIN to ADMIN_KEY_HASH,
+        UserRole.TEACHER to TEACHER_KEY_HASH
+    )
 
     private val prefs: SharedPreferences = run {
-        val masterKey = MasterKey.Builder(appContext, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+        val masterKey = MasterKey.Builder(context.applicationContext, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
         EncryptedSharedPreferences.create(
-            appContext,
+            context.applicationContext,
             PREFS_NAME,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
@@ -50,7 +62,7 @@ class RoleKeyManager private constructor(context: Context) {
 
     fun roleForKey(key: String): UserRole? {
         val hash = try {
-            sha256Hex(key)
+            sha256Hex(normalizeKey(key))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to hash provided key", e)
             return null
@@ -58,18 +70,33 @@ class RoleKeyManager private constructor(context: Context) {
         return roleHashes.entries.firstOrNull { it.value == hash }?.key
     }
 
+    fun matchesRoleKey(role: UserRole, key: String): Boolean {
+        if (role == UserRole.STUDENT) return true
+        val hash = sha256Hex(normalizeKey(key))
+        return roleHashes[role] == hash
+    }
+
     fun verifyAndGrant(requestedRole: UserRole, key: String): Boolean {
-        val unlocked = roleForKey(key) ?: return false
-        if (unlocked != requestedRole) return false
-        prefs.edit().putString(KEY_VERIFIED_ROLE, requestedRole.name).apply()
-        return true
+        if (!matchesRoleKey(requestedRole, key)) return false
+        return try {
+            prefs.edit().putString(KEY_VERIFIED_ROLE, requestedRole.name).apply()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist role grant", e)
+            // Key was valid even if encrypted prefs failed — allow login for this session.
+            true
+        }
     }
 
     fun grantedRole(): UserRole =
         UserRole.fromString(prefs.getString(KEY_VERIFIED_ROLE, null))
 
     fun clearGrant() {
-        prefs.edit().remove(KEY_VERIFIED_ROLE).apply()
+        try {
+            prefs.edit().remove(KEY_VERIFIED_ROLE).apply()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to clear role grant", e)
+        }
     }
 
     /** Clamp persisted role to what was cryptographically granted. */

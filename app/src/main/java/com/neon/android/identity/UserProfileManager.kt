@@ -57,6 +57,15 @@ class UserProfileManager private constructor(context: Context) {
     prefs.edit().putBoolean(KEY_PROFILE_SETUP_DONE, true).apply()
   }
 
+  /** Clears account session so the user returns to the login screen. Static ID is preserved. */
+  fun clearAccount() {
+    prefs.edit()
+      .remove(KEY_FIO)
+      .remove(KEY_ROLE)
+      .putBoolean(KEY_PROFILE_SETUP_DONE, false)
+      .apply()
+  }
+
   /** Display name used in chat — FIO if set, otherwise nickname fallback. */
   fun getDisplayName(nicknameFallback: String): String {
     val fio = prefs.getString(KEY_FIO, null)

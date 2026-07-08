@@ -11,11 +11,11 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 
 /**
- * Manages Location Services enable/disable state and user prompts
- * Checks location services status on every app startup
- * Note: This is for system location services, not location permissions
+ * Manages Location Services enable/disable state and user prompts.
+ * Broadcast monitoring is scoped to the location-check onboarding screen only.
  */
 class LocationStatusManager(
     private val activity: ComponentActivity,
@@ -30,17 +30,12 @@ class LocationStatusManager(
 
     private var locationSettingsLauncher: ActivityResultLauncher<Intent>? = null
     private var locationManager: LocationManager? = null
-    private var locationStateReceiver: BroadcastReceiver? = null
 
     init {
         setupLocationManager()
         setupLocationSettingsLauncher()
-        setupLocationStateReceiver()
     }
 
-    /**
-     * Setup LocationManager reference
-     */
     private fun setupLocationManager() {
         try {
             locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -51,9 +46,6 @@ class LocationStatusManager(
         }
     }
 
-    /**
-     * Setup launcher for location settings request
-     */
     private fun setupLocationSettingsLauncher() {
         locationSettingsLauncher = activity.registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -63,52 +55,21 @@ class LocationStatusManager(
             if (isEnabled) {
                 onLocationEnabled()
             } else {
-                onLocationDisabled("Location services are required for Bluetooth scanning on Android. Please enable location services to continue.")
+                onLocationDisabled(
+                    "Location services are required for Bluetooth scanning on Android. Please enable location services to continue."
+                )
             }
         }
     }
 
-    /**
-     * Setup broadcast receiver to listen for location settings changes
-     */
-    private fun setupLocationStateReceiver() {
-        locationStateReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == LocationManager.MODE_CHANGED_ACTION || 
-                    intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
-                    Log.d(TAG, "Location settings changed, checking status")
-                    val isEnabled = isLocationEnabled()
-                    if (isEnabled) {
-                        onLocationEnabled()
-                    } else {
-                        onLocationDisabled("Location services have been disabled.")
-                    }
-                }
-            }
-        }
-        
-        // Register receiver for location changes
-        val filter = IntentFilter().apply {
-            addAction(LocationManager.MODE_CHANGED_ACTION)
-            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
-        }
-        context.registerReceiver(locationStateReceiver, filter)
-    }
-
-    /**
-     * Check if location services are enabled (system-wide setting)
-     * Uses proper API depending on Android version
-     */
     fun isLocationEnabled(): Boolean {
         return try {
             locationManager?.let { lm ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    // API 28+ (Android 9) - Modern approach
                     lm.isLocationEnabled
                 } else {
-                    // Older devices - Check individual providers
                     lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                    lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                        lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
                 }
             } ?: false
         } catch (e: Exception) {
@@ -117,13 +78,8 @@ class LocationStatusManager(
         }
     }
 
-    /**
-     * Check location services status
-     * This should be called on every app startup
-     */
     fun checkLocationStatus(): LocationStatus {
         Log.d(TAG, "Checking location services status")
-        
         return when {
             locationManager == null -> {
                 Log.e(TAG, "LocationManager not available on this device")
@@ -140,13 +96,8 @@ class LocationStatusManager(
         }
     }
 
-    /**
-     * Request user to enable location services
-     * Opens system location settings screen
-     */
     fun requestEnableLocation() {
         Log.d(TAG, "Requesting user to enable location services")
-        
         try {
             val enableLocationIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
             locationSettingsLauncher?.launch(enableLocationIntent)
@@ -156,9 +107,6 @@ class LocationStatusManager(
         }
     }
 
-    /**
-     * Handle location status check result
-     */
     fun handleLocationStatus(status: LocationStatus) {
         when (status) {
             LocationStatus.ENABLED -> {
@@ -176,20 +124,15 @@ class LocationStatusManager(
         }
     }
 
-    /**
-     * Get user-friendly status message
-     */
     fun getStatusMessage(status: LocationStatus): String {
         return when (status) {
             LocationStatus.ENABLED -> "Location services are enabled and ready"
-            LocationStatus.DISABLED -> "Location services are disabled. Please enable location services for Bluetooth scanning."
+            LocationStatus.DISABLED ->
+                "Location services are disabled. Please enable location services for Bluetooth scanning."
             LocationStatus.NOT_AVAILABLE -> "Location services are not available on this device."
         }
     }
 
-    /**
-     * Get detailed diagnostics
-     */
     fun getDiagnostics(): String {
         return buildString {
             appendLine("Location Services Status Diagnostics:")
@@ -197,7 +140,6 @@ class LocationStatusManager(
             appendLine("Location services enabled: ${isLocationEnabled()}")
             appendLine("Current status: ${checkLocationStatus()}")
             appendLine("Android version: ${Build.VERSION.SDK_INT}")
-            
             locationManager?.let { lm ->
                 try {
                     appendLine("GPS provider enabled: ${lm.isProviderEnabled(LocationManager.GPS_PROVIDER)}")
@@ -205,43 +147,45 @@ class LocationStatusManager(
                 } catch (e: Exception) {
                     appendLine("Provider details: [Error: ${e.message}]")
                 }
-                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    appendLine("Using modern isLocationEnabled() API")
-                } else {
-                    appendLine("Using legacy provider check API")
-                }
             }
         }
     }
 
-    /**
-     * Log current location status for debugging
-     */
     fun logLocationStatus() {
         Log.d(TAG, getDiagnostics())
     }
 
     /**
-     * Cleanup resources - call this when activity is destroyed
+     * Monitors location provider changes while the location-check screen is visible.
+     * Does not invoke onboarding callbacks directly — only reports status changes.
      */
-    fun cleanup() {
-        locationStateReceiver?.let { receiver ->
-            try {
-                context.unregisterReceiver(receiver)
-                Log.d(TAG, "Location state receiver unregistered")
-            } catch (e: Exception) {
-                Log.w(TAG, "Error unregistering location state receiver: ${e.message}")
+    fun monitorLocationState(
+        context: Context,
+        onLocationStateChanged: (LocationStatus) -> Unit
+    ): BroadcastReceiver {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == LocationManager.MODE_CHANGED_ACTION ||
+                    intent?.action == LocationManager.PROVIDERS_CHANGED_ACTION
+                ) {
+                    Log.d(TAG, "Location settings changed, checking status")
+                    onLocationStateChanged(checkLocationStatus())
+                }
             }
         }
+
+        val filter = IntentFilter().apply {
+            addAction(LocationManager.MODE_CHANGED_ACTION)
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+        }
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        onLocationStateChanged(checkLocationStatus())
+        return receiver
     }
 }
 
-/**
- * Location services status enum
- */
 enum class LocationStatus {
     ENABLED,
-    DISABLED, 
+    DISABLED,
     NOT_AVAILABLE
 }

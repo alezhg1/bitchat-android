@@ -215,6 +215,26 @@ class MainActivity : OrientationAwareActivity() {
             }
         }
 
+        DisposableEffect(onboardingState, context) {
+            if (onboardingState != OnboardingState.LOCATION_CHECK) {
+                onDispose { }
+                return@DisposableEffect
+            }
+
+            val receiver = locationStatusManager.monitorLocationState(context) { status ->
+                if (status == LocationStatus.ENABLED) {
+                    handleLocationEnabled()
+                }
+            }
+
+            onDispose {
+                try {
+                    context.unregisterReceiver(receiver)
+                } catch (_: IllegalStateException) {
+                }
+            }
+        }
+
         when (onboardingState) {
             OnboardingState.PERMISSION_REQUESTING -> {
                 InitializingScreen(modifier)
@@ -330,7 +350,10 @@ class MainActivity : OrientationAwareActivity() {
                     onBackPressedDispatcher.addCallback(this@MainActivity, backCallback)
                     onDispose { backCallback.remove() }
                 }
-                ChatScreen(viewModel = chatViewModel)
+                ChatScreen(
+                    viewModel = chatViewModel,
+                    onLogout = { performLogout() }
+                )
             }
             
             OnboardingState.ERROR -> {
@@ -446,6 +469,10 @@ class MainActivity : OrientationAwareActivity() {
      * Handle Bluetooth enabled callback
      */
     private fun handleBluetoothEnabled() {
+        if (mainViewModel.onboardingState.value != OnboardingState.BLUETOOTH_CHECK) {
+            Log.d("MainActivity", "Ignoring Bluetooth enabled callback during ${mainViewModel.onboardingState.value}")
+            return
+        }
         Log.d("MainActivity", "Bluetooth enabled by user")
         mainViewModel.updateBluetoothLoading(false)
         mainViewModel.updateBluetoothStatus(BluetoothStatus.ENABLED)
@@ -494,6 +521,10 @@ class MainActivity : OrientationAwareActivity() {
      * Handle Location enabled callback
      */
     private fun handleLocationEnabled() {
+        if (mainViewModel.onboardingState.value != OnboardingState.LOCATION_CHECK) {
+            Log.d("MainActivity", "Ignoring location enabled callback during ${mainViewModel.onboardingState.value}")
+            return
+        }
         Log.d("MainActivity", "Location services enabled by user")
         mainViewModel.updateLocationLoading(false)
         mainViewModel.updateLocationStatus(LocationStatus.ENABLED)
@@ -625,6 +656,16 @@ class MainActivity : OrientationAwareActivity() {
             mainViewModel.updateOnboardingState(OnboardingState.INITIALIZING)
             initializeApp()
         }
+    }
+
+    private fun performLogout() {
+        Log.d("MainActivity", "User requested full logout")
+        try {
+            chatViewModel.logout()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Logout cleanup failed", e)
+        }
+        mainViewModel.updateOnboardingState(OnboardingState.LOGIN)
     }
     
     private fun handleOnboardingFailed(message: String) {
@@ -889,14 +930,6 @@ class MainActivity : OrientationAwareActivity() {
         super.onDestroy()
         
         try { unregisterReceiver(forceFinishReceiver) } catch (_: Exception) { }
-        
-        // Cleanup location status manager
-        try {
-            locationStatusManager.cleanup()
-            Log.d("MainActivity", "Location status manager cleaned up successfully")
-        } catch (e: Exception) {
-            Log.w("MainActivity", "Error cleaning up location status manager: ${e.message}")
-        }
         
         // Do not stop mesh here; ForegroundService owns lifecycle for background reliability
     }

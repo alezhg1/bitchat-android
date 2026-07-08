@@ -29,21 +29,11 @@ fun LoginScreen(
 
     var fio by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
-    var fioError by remember { mutableStateOf<String?>(null) }
-    var pendingRole by remember { mutableStateOf<UserRole?>(null) }
     var secretKey by remember { mutableStateOf("") }
+    var fioError by remember { mutableStateOf<String?>(null) }
     var keyError by remember { mutableStateOf<String?>(null) }
-    var unlockedRoles by remember { mutableStateOf(setOf(UserRole.STUDENT)) }
 
-    fun selectRole(role: UserRole) {
-        if (role == UserRole.STUDENT || role in unlockedRoles) {
-            selectedRole = role
-        } else {
-            pendingRole = role
-            secretKey = ""
-            keyError = null
-        }
-    }
+    val needsSecretKey = selectedRole != UserRole.STUDENT
 
     Column(
         modifier = modifier
@@ -77,7 +67,7 @@ fun LoginScreen(
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Done
+                imeAction = ImeAction.Next
             )
         )
 
@@ -113,10 +103,33 @@ fun LoginScreen(
                     .padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                RadioButton(selected = selectedRole == role, onClick = { selectRole(role) })
+                RadioButton(
+                    selected = selectedRole == role,
+                    onClick = {
+                        selectedRole = role
+                        keyError = null
+                        if (role == UserRole.STUDENT) secretKey = ""
+                    }
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(role.displayNameRu)
             }
+        }
+
+        if (needsSecretKey) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = secretKey,
+                onValueChange = { secretKey = it; keyError = null },
+                label = { Text("Секретный ключ") },
+                placeholder = { Text("Ключ для роли «${selectedRole.displayNameRu}»") },
+                singleLine = true,
+                isError = keyError != null,
+                supportingText = keyError?.let { { Text(it) } },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
         }
 
         Spacer(Modifier.height(24.dp))
@@ -126,6 +139,17 @@ fun LoginScreen(
                     fioError = "Введите ФИО (минимум 2 символа)"
                     return@Button
                 }
+                if (needsSecretKey) {
+                    if (secretKey.isBlank()) {
+                        keyError = "Введите секретный ключ"
+                        return@Button
+                    }
+                    if (!roleKeyManager.matchesRoleKey(selectedRole, secretKey)) {
+                        keyError = "Неверный ключ"
+                        return@Button
+                    }
+                    roleKeyManager.verifyAndGrant(selectedRole, secretKey)
+                }
                 onLogin(fio.trim(), selectedRole)
             },
             modifier = Modifier.fillMaxWidth(),
@@ -133,42 +157,5 @@ fun LoginScreen(
         ) {
             Text("Войти")
         }
-    }
-
-    pendingRole?.let { requestedRole ->
-        AlertDialog(
-            onDismissRequest = { pendingRole = null },
-            title = { Text("Секретный ключ: ${requestedRole.displayNameRu}") },
-            text = {
-                Column {
-                    Text("Введите секретный ключ для роли «${requestedRole.displayNameRu}».")
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = secretKey,
-                        onValueChange = { secretKey = it; keyError = null },
-                        label = { Text("Секретный ключ") },
-                        singleLine = true,
-                        isError = keyError != null,
-                        supportingText = keyError?.let { { Text(it) } },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (roleKeyManager.verifyAndGrant(requestedRole, secretKey)) {
-                        unlockedRoles = unlockedRoles + requestedRole
-                        selectedRole = requestedRole
-                        pendingRole = null
-                    } else {
-                        keyError = "Неверный ключ"
-                    }
-                }) { Text("Подтвердить") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingRole = null }) { Text("Отмена") }
-            }
-        )
     }
 }

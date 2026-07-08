@@ -88,6 +88,17 @@ class MessagePersistenceService private constructor(private val context: Context
     }
   }
 
+  suspend fun clearAllPersistedMessages() = withContext(Dispatchers.IO) {
+    try {
+      storageDir.listFiles()?.forEach { file ->
+        if (file.isFile) file.delete()
+      }
+      Log.d(TAG, "Cleared all persisted chat messages")
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to clear persisted messages", e)
+    }
+  }
+
   private fun loadMessagesFromFile(file: File): List<BitchatMessage> {
     if (!file.exists()) return emptyList()
     return try {
