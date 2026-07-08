@@ -32,8 +32,8 @@ object RoleKeyAsset {
 
     /** Built-in hashes for default operator keys (see tools/generate_role_keys.ps1). */
     private fun defaultHashes(): Map<UserRole, String> = mapOf(
-        UserRole.ADMIN to "bdd66a2380dda0ef9f406b8fb79c112986dec8c98272ff93e907d0f1c8d14c7f",
-        UserRole.TEACHER to "c1e4d07ba632c4730f21695f63d8b1fc295cca871d8fa9918cc0aa1587e5835a"
+        UserRole.ADMIN to "b55d09fa6d34e9771fb5d8901f188e246fc55c9786fc938526490940c90abcd4",
+        UserRole.TEACHER to "d5fb492e49e5e554e86ee646f04ce82b19e83354e000529d123482dd29070550"
     )
 
     private fun readAsset(context: Context): ByteArray? = try {
