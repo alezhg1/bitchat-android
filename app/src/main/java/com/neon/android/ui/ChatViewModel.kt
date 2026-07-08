@@ -335,6 +335,13 @@ class ChatViewModel(
                 .enableLocationChannels()
         } catch (_: Exception) { }
     }
+
+    /** Force immediate GEOLOC mesh broadcast (admin map refresh). */
+    fun refreshLocationSharing() {
+        com.neon.android.geohash.LocationSharingService
+            .getInstance(getApplication())
+            .requestImmediateBroadcast(meshService)
+    }
     
     override fun onCleared() {
         super.onCleared()

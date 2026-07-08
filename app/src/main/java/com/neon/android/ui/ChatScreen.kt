@@ -572,7 +572,8 @@ private fun ChatDialogs(
     // Map screen for admin/teacher
     MapScreen(
         isPresented = showMapScreen,
-        onDismiss = onMapScreenDismiss
+        onDismiss = onMapScreenDismiss,
+        viewModel = viewModel
     )
 
     // Location channels sheet

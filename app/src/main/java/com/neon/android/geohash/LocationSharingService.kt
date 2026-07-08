@@ -34,14 +34,16 @@ data class UserLocationEntry(
 )
 
 /**
- * Broadcasts user geolocation every 15 minutes over BLE mesh (multi-hop relay)
+ * Broadcasts user geolocation every [SHARE_INTERVAL_MS] over BLE mesh (multi-hop relay)
  * and collects locations from peers. Admins/teachers render the org map.
  */
 class LocationSharingService private constructor(private val context: Context) {
 
   companion object {
     private const val TAG = "LocationSharing"
-    private const val INTERVAL_MS = 15 * 60 * 1000L
+    /** 5 minutes — frequent enough for camp map; still gentle on BLE battery. */
+    const val SHARE_INTERVAL_MS = 5 * 60 * 1000L
+    private const val INTERVAL_MS = SHARE_INTERVAL_MS
     const val GEOLOC_PREFIX = "[GEOLOC]:"
     private const val CACHE_FILE = "user_locations_cache.json"
 
@@ -114,6 +116,12 @@ class LocationSharingService private constructor(private val context: Context) {
   fun stop() {
     sharingJob?.cancel()
     sharingJob = null
+  }
+
+  /** Request an immediate GEOLOC broadcast (e.g. admin map refresh). */
+  fun requestImmediateBroadcast(meshService: BluetoothMeshService) {
+    val scope = ioScope ?: return
+    scope.launch { broadcastLocation(meshService) }
   }
 
   fun handleIncomingMessage(content: String, senderPeerId: String?): Boolean {

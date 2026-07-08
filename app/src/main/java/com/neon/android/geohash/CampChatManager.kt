@@ -153,4 +153,16 @@ object CampChatManager {
         LocationChannelManager.getInstance(context).select(ChannelID.Location(channel))
         return true
     }
+
+    /** Camp center for map bounds when few/no GPS points (config coords or geohash center). */
+    fun getCampAnchorCoordinates(context: Context): Pair<Double, Double>? {
+        val config = loadConfig(context)
+        if (config.latitude != 0.0 || config.longitude != 0.0) {
+            return config.latitude to config.longitude
+        }
+        getCampGeohash(context)?.let { hash ->
+            return Geohash.decodeToCenter(hash)
+        }
+        return null
+    }
 }
