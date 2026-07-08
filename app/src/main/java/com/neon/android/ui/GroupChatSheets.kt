@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.neon.android.mesh.GroupChatInfo
+import com.neon.android.mesh.GroupQrCodec
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,9 +75,7 @@ fun GroupQrDisplaySheet(
     modifier: Modifier = Modifier
 ) {
     if (!isPresented || group == null) return
-    val payload = remember(group) {
-        com.neon.android.mesh.GroupQrCodec.encode(group.id, group.name)
-    }
+    val payload = remember(group) { GroupQrCodec.encode(group.id, group.name) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     com.neon.android.core.ui.component.sheet.BitchatBottomSheet(

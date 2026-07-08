@@ -1,4 +1,4 @@
-package com.neon.android.identity
+package com.neon.android.mesh
 
 import java.net.URLDecoder
 import java.net.URLEncoder

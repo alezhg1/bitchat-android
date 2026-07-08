@@ -490,7 +490,7 @@ class ChatViewModel(
     fun joinGroupFromQr(raw: String): com.neon.android.mesh.GroupChatInfo? {
         val ctx = getApplication<android.app.Application>()
         val info = com.neon.android.mesh.GroupChatManager.joinFromQr(
-            raw, meshService.myPeerID, state, dataManager
+            ctx, raw, meshService.myPeerID, state, dataManager
         ) ?: return null
         channelManager.switchToChannel(info.storageKey)
         return info
