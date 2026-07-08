@@ -37,6 +37,7 @@ import com.neon.android.core.ui.component.sheet.BitchatBottomSheet
 import com.neon.android.identity.RoleQrRepository
 import com.neon.android.identity.UserProfileManager
 import com.neon.android.identity.UserRole
+import com.neon.android.net.TorMode
 import com.neon.android.net.TorPreferenceManager
 import com.neon.android.net.ArtiTorManager
 
