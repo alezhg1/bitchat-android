@@ -154,10 +154,10 @@ object CampChatManager {
     ): List<com.neon.android.model.BitchatMessage> {
         val merged = LinkedHashMap<String, com.neon.android.model.BitchatMessage>()
         (meshMessages + geoMessages)
+            .filter { !com.neon.android.mesh.MessageDedup.isGeolocPayload(it.content) }
             .sortedBy { it.timestamp.time }
             .forEach { msg ->
-                val key = com.neon.android.mesh.MessageDedup.contentKey(msg)
-                merged[key] = msg
+                merged[com.neon.android.mesh.MessageDedup.campContentKey(msg)] = msg
             }
         return merged.values.toList()
     }

@@ -429,13 +429,19 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
                 return
             }
             val groupParsed = com.neon.android.mesh.GroupChatManager.parseMeshPayload(rawContent)
+            val channelParsed = if (groupParsed == null) {
+                com.neon.android.mesh.ChannelWireCodec.parse(rawContent)
+            } else null
+            val senderPeer = MessageDedup.packetSenderPeerId(packet)
             val message = BitchatMessage(
                 id = MessageDedup.packetId(packet),
-                sender = delegate?.getPeerNickname(peerID) ?: "unknown",
-                content = groupParsed?.second ?: rawContent,
-                senderPeerID = peerID,
+                sender = delegate?.getPeerNickname(senderPeer)
+                    ?: delegate?.getPeerNickname(peerID)
+                    ?: "unknown",
+                content = groupParsed?.second ?: channelParsed?.second ?: rawContent,
+                senderPeerID = senderPeer,
                 timestamp = Date(packet.timestamp.toLong()),
-                channel = groupParsed?.first
+                channel = groupParsed?.first ?: channelParsed?.first
             )
             delegate?.onMessageReceived(message)
         } catch (e: Exception) {

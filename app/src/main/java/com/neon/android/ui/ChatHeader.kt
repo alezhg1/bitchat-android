@@ -284,6 +284,7 @@ private fun ChannelHeader(
     val isGroup = com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)
     val title = when {
         isGroup -> com.neon.android.mesh.GroupChatManager.displayName(context, channel)
+        channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL -> "Преподы"
         channel.startsWith("#") -> channel.removePrefix("#")
         else -> channel
     }

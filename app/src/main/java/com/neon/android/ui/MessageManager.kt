@@ -182,11 +182,8 @@ class MessageManager(
     /**
      * Generate a unique key for message deduplication
      */
-    fun generateMessageKey(message: BitchatMessage): String {
-        val senderKey = message.senderPeerID ?: message.sender
-        val contentHash = message.content.hashCode()
-        return "$senderKey-${message.timestamp.time}-$contentHash"
-    }
+    fun generateMessageKey(message: BitchatMessage): String =
+        com.neon.android.mesh.MessageDedup.contentKey(message)
     
     /**
      * Check if a message has already been processed

@@ -458,7 +458,13 @@ class ChatViewModel(
     }
     
     fun switchToChannel(channel: String?) {
-        if (channel != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)) {
+        if (channel != null && channel.startsWith("#")) {
+            try {
+                com.neon.android.geohash.LocationChannelManager
+                    .getInstance(getApplication())
+                    .select(com.neon.android.geohash.ChannelID.Mesh)
+            } catch (_: Exception) { }
+        } else if (channel != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)) {
             try {
                 com.neon.android.geohash.LocationChannelManager
                     .getInstance(getApplication())
@@ -706,7 +712,45 @@ class ChatViewModel(
                 currentChannelValue
             )
 
-            if (campActive) {
+            if (currentChannelValue != null) {
+                val message = BitchatMessage(
+                    sender = state.getNicknameValue() ?: meshService.myPeerID,
+                    content = content,
+                    timestamp = Date(),
+                    isRelay = false,
+                    senderPeerID = meshService.myPeerID,
+                    mentions = if (mentions.isNotEmpty()) mentions else null,
+                    channel = currentChannelValue
+                )
+
+                channelManager.addChannelMessage(currentChannelValue, message, meshService.myPeerID)
+
+                val wireContent = when {
+                    com.neon.android.mesh.GroupChatManager.isGroupChannel(currentChannelValue) ->
+                        com.neon.android.mesh.GroupChatManager.wrapForMesh(currentChannelValue, content)
+                    currentChannelValue.startsWith("#") ->
+                        com.neon.android.mesh.ChannelWireCodec.wrap(currentChannelValue, content)
+                    else -> content
+                }
+
+                if (channelManager.hasChannelKey(currentChannelValue)) {
+                    channelManager.sendEncryptedChannelMessage(
+                        content,
+                        mentions,
+                        currentChannelValue,
+                        state.getNicknameValue(),
+                        meshService.myPeerID,
+                        onEncryptedPayload = {
+                            meshService.sendMessage(wireContent, mentions, currentChannelValue)
+                        },
+                        onFallback = {
+                            meshService.sendMessage(wireContent, mentions, currentChannelValue)
+                        }
+                    )
+                } else {
+                    meshService.sendMessage(wireContent, mentions, currentChannelValue)
+                }
+            } else if (campActive) {
                 val campChannel = com.neon.android.geohash.CampChatManager.getCampChannel(ctx)
                 val message = BitchatMessage(
                     sender = state.getNicknameValue() ?: meshService.myPeerID,
@@ -738,7 +782,6 @@ class ChatViewModel(
                     state.getNicknameValue()
                 )
             } else {
-                // Send public/channel message via mesh
                 val message = BitchatMessage(
                     sender = state.getNicknameValue() ?: meshService.myPeerID,
                     content = content,
@@ -746,40 +789,10 @@ class ChatViewModel(
                     isRelay = false,
                     senderPeerID = meshService.myPeerID,
                     mentions = if (mentions.isNotEmpty()) mentions else null,
-                    channel = currentChannelValue
+                    channel = null
                 )
-
-                if (currentChannelValue != null) {
-                    channelManager.addChannelMessage(currentChannelValue, message, meshService.myPeerID)
-
-                    val wireContent = if (com.neon.android.mesh.GroupChatManager.isGroupChannel(currentChannelValue)) {
-                        com.neon.android.mesh.GroupChatManager.wrapForMesh(currentChannelValue, content)
-                    } else {
-                        content
-                    }
-
-                    // Check if encrypted channel
-                    if (channelManager.hasChannelKey(currentChannelValue)) {
-                        channelManager.sendEncryptedChannelMessage(
-                            content,
-                            mentions,
-                            currentChannelValue,
-                            state.getNicknameValue(),
-                            meshService.myPeerID,
-                            onEncryptedPayload = { encryptedData ->
-                                meshService.sendMessage(wireContent, mentions, currentChannelValue)
-                            },
-                            onFallback = {
-                                meshService.sendMessage(wireContent, mentions, currentChannelValue)
-                            }
-                        )
-                    } else {
-                        meshService.sendMessage(wireContent, mentions, currentChannelValue)
-                    }
-                } else {
-                    messageManager.addMessage(message)
-                    meshService.sendMessage(content, mentions, null)
-                }
+                messageManager.addMessage(message)
+                meshService.sendMessage(content, mentions, null)
             }
         }
     }

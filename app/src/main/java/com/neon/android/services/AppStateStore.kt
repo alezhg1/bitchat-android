@@ -36,6 +36,8 @@ object AppStateStore {
 
     private fun shouldSkip(msg: BitchatMessage): Boolean {
         if (com.neon.android.mesh.MessageDedup.isGeolocPayload(msg.content)) return true
+        if (com.neon.android.mesh.GroupChatManager.parseMeshPayload(msg.content) != null) return true
+        if (com.neon.android.mesh.ChannelWireCodec.parse(msg.content) != null) return true
         val contentKey = com.neon.android.mesh.MessageDedup.contentKey(msg)
         if (seenMessageIds.contains(msg.id) || seenContentKeys.contains(contentKey)) return true
         seenMessageIds.add(msg.id)
