@@ -435,7 +435,7 @@ private fun MainHeader(
                 val locationChannel = selectedLocationChannel
                 val subtitle = when {
                     channelName != null && channelName == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL ->
-                        "Канал · Преподы (только чтение для учеников)"
+                        "Канал · Преподы"
                     channelName != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channelName) ->
                         "Группа · ${com.neon.android.mesh.GroupChatManager.displayName(context, channelName)}"
                     channelName != null -> "Канал · ${channelName.removePrefix("#").removePrefix("grp:")}"

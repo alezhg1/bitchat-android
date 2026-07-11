@@ -52,16 +52,25 @@ class ChatViewModel(
     }
 
     fun sendVoiceNote(toPeerIDOrNull: String?, channelOrNull: String?, filePath: String) {
+        val channel = channelOrNull ?: state.getCurrentChannelValue()
+        if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, channel)) return
         mediaSendingManager.sendVoiceNote(toPeerIDOrNull, channelOrNull, filePath)
     }
 
     fun sendFileNote(toPeerIDOrNull: String?, channelOrNull: String?, filePath: String) {
+        val channel = channelOrNull ?: state.getCurrentChannelValue()
+        if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, channel)) return
         mediaSendingManager.sendFileNote(toPeerIDOrNull, channelOrNull, filePath)
     }
 
     fun sendImageNote(toPeerIDOrNull: String?, channelOrNull: String?, filePath: String) {
+        val channel = channelOrNull ?: state.getCurrentChannelValue()
+        if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, channel)) return
         mediaSendingManager.sendImageNote(toPeerIDOrNull, channelOrNull, filePath)
     }
+
+    fun canPostInCurrentChat(): Boolean =
+        com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, state.getCurrentChannelValue())
 
     fun getCurrentNpub(): String? {
         return try {
@@ -666,12 +675,6 @@ class ChatViewModel(
         val currentChannelValue = state.getCurrentChannelValue()
 
         if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, currentChannelValue)) {
-            val channel = currentChannelValue
-                ?: com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL
-            messageManager.addChannelSystemMessage(
-                channel,
-                "В канал «преподы» могут писать только преподаватели и администраторы."
-            )
             return
         }
         

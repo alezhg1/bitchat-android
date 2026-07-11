@@ -117,9 +117,21 @@ fun ChatScreen(
     }
 
     val showMediaButtons = when {
+        !com.neon.android.geohash.CampChatManager.canPostInChannel(viewModel.userRole, currentChannel) -> false
         currentChannel != null -> true
         com.neon.android.geohash.CampChatManager.isCampChannel(context, selectedLocationChannel) -> true
         else -> selectedLocationChannel !is com.neon.android.geohash.ChannelID.Location
+    }
+
+    val canWriteInChat = com.neon.android.geohash.CampChatManager.canPostInChannel(
+        viewModel.userRole,
+        currentChannel
+    )
+
+    LaunchedEffect(canWriteInChat) {
+        if (!canWriteInChat) {
+            messageText = TextFieldValue("")
+        }
     }
 
     // Use WindowInsets to handle keyboard properly
@@ -204,6 +216,7 @@ fun ChatScreen(
         }
     }
 
+    if (canWriteInChat) {
     ChatInputSection(
         messageText = messageText,
         onMessageTextChange = { newText: TextFieldValue ->
@@ -252,6 +265,15 @@ fun ChatScreen(
                 colorScheme = colorScheme,
                 showMediaButtons = showMediaButtons
             )
+    } else {
+        ReadOnlyChatInputBar(
+            hint = if (currentChannel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL) {
+                "Канал только для чтения · писать могут преподаватели и администраторы"
+            } else {
+                "Нет прав на отправку сообщений в этот чат"
+            }
+        )
+    }
         }
 
         // Floating header - positioned absolutely at top, ignores keyboard
@@ -392,6 +414,36 @@ fun ChatScreen(
         onMapScreenDismiss = { showMapScreen = false },
         onLogout = onLogout,
     )
+}
+
+@Composable
+fun ReadOnlyChatInputBar(
+    hint: String,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .imePadding(),
+        color = ChatColors.inputBarSurface,
+        shadowElevation = 4.dp
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            shape = MaterialTheme.shapes.large,
+            color = ChatColors.inputFieldFill
+        ) {
+            Text(
+                text = hint,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+            )
+        }
+    }
 }
 
 @Composable
