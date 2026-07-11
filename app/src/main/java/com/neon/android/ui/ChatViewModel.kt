@@ -329,11 +329,16 @@ class ChatViewModel(
             .start(meshService, viewModelScope)
 
         com.neon.android.geohash.CampChatManager.ensureCampAnchor(getApplication())
+        ensureCampChannels()
         switchToCampChat()
         try {
             com.neon.android.geohash.LocationChannelManager.getInstance(getApplication())
                 .enableLocationChannels()
         } catch (_: Exception) { }
+    }
+
+    private fun ensureCampChannels() {
+        joinChannel(com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL)
     }
 
     /** Force immediate GEOLOC mesh broadcast (admin map refresh). */
@@ -453,6 +458,13 @@ class ChatViewModel(
     }
     
     fun switchToChannel(channel: String?) {
+        if (channel != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)) {
+            try {
+                com.neon.android.geohash.LocationChannelManager
+                    .getInstance(getApplication())
+                    .select(com.neon.android.geohash.ChannelID.Mesh)
+            } catch (_: Exception) { }
+        }
         channelManager.switchToChannel(channel)
     }
 
@@ -646,6 +658,13 @@ class ChatViewModel(
         
         var selectedPeer = state.getSelectedPrivateChatPeerValue()
         val currentChannelValue = state.getCurrentChannelValue()
+
+        if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, currentChannelValue)) {
+            messageManager.addSystemMessage(
+                "В канал «преподы» могут писать только преподаватели и администраторы."
+            )
+            return
+        }
         
         if (selectedPeer != null) {
             // If the selected peer is a temporary Nostr alias or a noise-hex identity, resolve to a canonical target

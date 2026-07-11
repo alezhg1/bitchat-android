@@ -27,6 +27,17 @@ object CampChatManager {
     /** Mesh tag for camp group (local UI / join hint; wire payload is still broadcast). */
     const val CAMP_MESH_CHANNEL = "#лагерь"
 
+    /** Staff-only channel; only teachers and admins may post. */
+    const val TEACHERS_CHANNEL = "#преподы"
+
+    fun canPostInChannel(role: com.neon.android.identity.UserRole, channel: String?): Boolean {
+        if (channel == TEACHERS_CHANNEL) {
+            return role == com.neon.android.identity.UserRole.ADMIN ||
+                role == com.neon.android.identity.UserRole.TEACHER
+        }
+        return true
+    }
+
     /** Default geohash length: NEIGHBORHOOD ≈ 1.2 km — fits a typical summer camp. */
     const val DEFAULT_PRECISION = 6
 
@@ -144,7 +155,10 @@ object CampChatManager {
         val merged = LinkedHashMap<String, com.neon.android.model.BitchatMessage>()
         (meshMessages + geoMessages)
             .sortedBy { it.timestamp.time }
-            .forEach { msg -> merged[msg.id] = msg }
+            .forEach { msg ->
+                val key = com.neon.android.mesh.MessageDedup.contentKey(msg)
+                merged[key] = msg
+            }
         return merged.values.toList()
     }
 

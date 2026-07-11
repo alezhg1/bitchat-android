@@ -5,6 +5,7 @@ import com.neon.android.crypto.EncryptionService
 import com.neon.android.protocol.BitchatPacket
 import com.neon.android.protocol.MessageType
 import com.neon.android.model.RoutedPacket
+import com.neon.android.sync.PacketIdUtil
 import com.neon.android.util.toHexString
 import kotlinx.coroutines.*
 import java.util.*
@@ -217,18 +218,8 @@ class SecurityManager(private val encryptionService: EncryptionService, private 
     /**
      * Generate message ID for duplicate detection
      */
-    private fun generateMessageID(packet: BitchatPacket, peerID: String): String {
-        return when (MessageType.fromValue(packet.type)) {
-            MessageType.FRAGMENT -> {
-                // For fragments, include the payload hash to distinguish different fragments
-                "${packet.timestamp}-$peerID-${packet.type}-${packet.payload.contentHashCode()}"
-            }
-            else -> {
-                // For other messages, use a truncated payload hash
-                val payloadHash = packet.payload.sliceArray(0 until minOf(64, packet.payload.size)).contentHashCode()
-                "${packet.timestamp}-$peerID-$payloadHash"
-            }
-        }
+    private fun generateMessageID(packet: BitchatPacket, @Suppress("UNUSED_PARAMETER") peerID: String): String {
+        return PacketIdUtil.computeIdHex(packet)
     }
     
     /**

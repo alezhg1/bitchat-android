@@ -13,8 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.neon.android.geohash.CampOfflineMapProvider
 import com.neon.android.geohash.UserLocationEntry
 import com.neon.android.identity.UserRole
@@ -29,11 +33,29 @@ fun CampTerrainMapView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var mapRef by remember { mutableStateOf<MapView?>(null) }
     var didInitialCenter by remember { mutableStateOf(false) }
 
     LaunchedEffect(campAnchor) {
         campAnchor?.let { CampOfflineMapProvider.prefetchCampTiles(context, it) }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> mapRef?.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapRef?.onPause()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            mapRef?.onPause()
+            mapRef?.onDetach()
+            mapRef = null
+        }
     }
 
     val located = remember(users) {
@@ -50,8 +72,11 @@ fun CampTerrainMapView(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
+                    isClickable = true
+                    isFocusable = true
                     CampOfflineMapProvider.setupMapView(this)
                     campAnchor?.let { CampOfflineMapProvider.centerMap(this, it) }
+                    onResume()
                     mapRef = this
                     didInitialCenter = campAnchor != null
                 }
@@ -64,33 +89,43 @@ fun CampTerrainMapView(
                 }
                 map.overlays.removeAll { it is Marker }
                 located.forEach { entry ->
+                    val roleLabel = UserRole.fromString(entry.role).displayNameRu
                     val marker = Marker(map).apply {
                         position = GeoPoint(entry.latitude, entry.longitude)
                         title = entry.fio
-                        snippet = UserRole.fromString(entry.role).displayNameRu
+                        snippet = "$roleLabel · ${entry.staticId.take(8)}"
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     }
                     map.overlays.add(marker)
+                    marker.showInfoWindow()
                 }
                 map.invalidate()
-            },
-            onRelease = { map ->
-                map.onDetach()
-                mapRef = null
             }
         )
 
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
+                .zIndex(2f)
                 .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            SmallMapButton(Icons.Default.Add) { mapRef?.let { CampOfflineMapProvider.zoomIn(it) } }
-            SmallMapButton(Icons.Default.Remove) { mapRef?.let { CampOfflineMapProvider.zoomOut(it) } }
+            SmallMapButton(Icons.Default.Add) {
+                mapRef?.let { map ->
+                    CampOfflineMapProvider.zoomIn(map)
+                    map.postInvalidate()
+                }
+            }
+            SmallMapButton(Icons.Default.Remove) {
+                mapRef?.let { map ->
+                    CampOfflineMapProvider.zoomOut(map)
+                    map.postInvalidate()
+                }
+            }
             SmallMapButton(Icons.Default.ZoomOutMap) {
                 mapRef?.let { map ->
                     campAnchor?.let { anchor -> CampOfflineMapProvider.fitCampArea(map, anchor) }
+                    map.postInvalidate()
                 }
             }
         }
@@ -104,11 +139,11 @@ private fun SmallMapButton(
 ) {
     FilledIconButton(
         onClick = onClick,
-        modifier = Modifier.size(36.dp),
+        modifier = Modifier.size(40.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
         )
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
     }
 }

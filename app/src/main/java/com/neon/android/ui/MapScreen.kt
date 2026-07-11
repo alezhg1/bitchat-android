@@ -119,7 +119,19 @@ fun MapScreen(
       )
 
       CampTerrainMapView(
-        users = userLocations.values.toList(),
+        users = displayUsers
+          .filter { it.latitude != null && it.longitude != null }
+          .map { user ->
+            UserLocationEntry(
+              staticId = user.staticId,
+              fio = user.fio,
+              latitude = user.latitude ?: 0.0,
+              longitude = user.longitude ?: 0.0,
+              role = user.role.name,
+              peerId = user.peerId,
+              timestampMs = user.timestampMs ?: 0L
+            )
+          },
         campAnchor = campAnchor,
         modifier = Modifier
           .fillMaxWidth()

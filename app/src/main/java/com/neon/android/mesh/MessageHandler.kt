@@ -416,8 +416,21 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
 
             // Fallback: plain text (supports [GRP:id]:payload for user groups)
             val rawContent = String(packet.payload, Charsets.UTF_8)
+            if (MessageDedup.isGeolocPayload(rawContent)) {
+                delegate?.onMessageReceived(
+                    BitchatMessage(
+                        id = MessageDedup.packetId(packet),
+                        sender = delegate?.getPeerNickname(peerID) ?: "unknown",
+                        content = rawContent,
+                        senderPeerID = peerID,
+                        timestamp = Date(packet.timestamp.toLong())
+                    )
+                )
+                return
+            }
             val groupParsed = com.neon.android.mesh.GroupChatManager.parseMeshPayload(rawContent)
             val message = BitchatMessage(
+                id = MessageDedup.packetId(packet),
                 sender = delegate?.getPeerNickname(peerID) ?: "unknown",
                 content = groupParsed?.second ?: rawContent,
                 senderPeerID = peerID,

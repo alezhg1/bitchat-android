@@ -134,8 +134,7 @@ fun ChatScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.ime) // This handles keyboard insets
-                .windowInsetsPadding(WindowInsets.navigationBars) // Add bottom padding when keyboard is not expanded
+                .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
             // Header spacer - creates exact space for the floating header (status bar + compact header)
             Spacer(
@@ -416,7 +415,9 @@ fun ChatInputSection(
     showMediaButtons: Boolean
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding(),
         color = ChatColors.inputBarSurface,
         shadowElevation = 4.dp
     ) {

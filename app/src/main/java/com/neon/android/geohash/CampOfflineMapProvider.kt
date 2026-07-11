@@ -46,11 +46,13 @@ object CampOfflineMapProvider {
     }
 
     fun zoomIn(mapView: MapView) {
-        mapView.controller.zoomIn()
+        val next = (mapView.zoomLevelDouble + 1.0).coerceAtMost(MAX_ZOOM)
+        mapView.controller.setZoom(next)
     }
 
     fun zoomOut(mapView: MapView) {
-        mapView.controller.zoomOut()
+        val next = (mapView.zoomLevelDouble - 1.0).coerceAtLeast(MIN_ZOOM)
+        mapView.controller.setZoom(next)
     }
 
     fun fitCampArea(mapView: MapView, anchor: Pair<Double, Double>) {

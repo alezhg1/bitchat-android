@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 object AppStateStore {
     // Global de-dup set by message id to avoid duplicate keys in Compose lists
     private val seenMessageIds = mutableSetOf<String>()
+    private val seenContentKeys = mutableSetOf<String>()
     // Connected peer IDs (mesh ephemeral IDs)
     private val _peers = MutableStateFlow<List<String>>(emptyList())
     val peers: StateFlow<List<String>> = _peers.asStateFlow()
@@ -33,18 +34,25 @@ object AppStateStore {
         _peers.value = ids
     }
 
+    private fun shouldSkip(msg: BitchatMessage): Boolean {
+        if (com.neon.android.mesh.MessageDedup.isGeolocPayload(msg.content)) return true
+        val contentKey = com.neon.android.mesh.MessageDedup.contentKey(msg)
+        if (seenMessageIds.contains(msg.id) || seenContentKeys.contains(contentKey)) return true
+        seenMessageIds.add(msg.id)
+        seenContentKeys.add(contentKey)
+        return false
+    }
+
     fun addPublicMessage(msg: BitchatMessage) {
         synchronized(this) {
-            if (seenMessageIds.contains(msg.id)) return
-            seenMessageIds.add(msg.id)
+            if (shouldSkip(msg)) return
             _publicMessages.value = _publicMessages.value + msg
         }
     }
 
     fun addPrivateMessage(peerID: String, msg: BitchatMessage) {
         synchronized(this) {
-            if (seenMessageIds.contains(msg.id)) return
-            seenMessageIds.add(msg.id)
+            if (shouldSkip(msg)) return
             val map = _privateMessages.value.toMutableMap()
             val list = (map[peerID] ?: emptyList()) + msg
             map[peerID] = list
@@ -87,8 +95,7 @@ object AppStateStore {
 
     fun addChannelMessage(channel: String, msg: BitchatMessage) {
         synchronized(this) {
-            if (seenMessageIds.contains(msg.id)) return
-            seenMessageIds.add(msg.id)
+            if (shouldSkip(msg)) return
             val map = _channelMessages.value.toMutableMap()
             val list = (map[channel] ?: emptyList()) + msg
             map[channel] = list
@@ -100,6 +107,7 @@ object AppStateStore {
     fun clear() {
         synchronized(this) {
             seenMessageIds.clear()
+            seenContentKeys.clear()
             _peers.value = emptyList()
             _publicMessages.value = emptyList()
             _privateMessages.value = emptyMap()

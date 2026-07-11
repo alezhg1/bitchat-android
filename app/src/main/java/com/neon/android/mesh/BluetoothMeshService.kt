@@ -387,6 +387,10 @@ class BluetoothMeshService(private val context: Context) {
             
             // Callbacks
             override fun onMessageReceived(message: BitchatMessage) {
+                if (com.neon.android.mesh.MessageDedup.isGeolocPayload(message.content)) {
+                    delegate?.didReceiveMessage(message)
+                    return
+                }
                 // Always reflect into process-wide store so UI can hydrate after recreation
                 try {
                     when {
