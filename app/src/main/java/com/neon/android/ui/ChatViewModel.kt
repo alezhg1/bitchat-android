@@ -338,6 +338,7 @@ class ChatViewModel(
             .start(meshService, viewModelScope)
 
         com.neon.android.geohash.CampChatManager.ensureCampAnchor(getApplication())
+        ensureCampMeshMembership()
         ensureCampChannels()
         switchToCampChat()
         try {
@@ -497,7 +498,13 @@ class ChatViewModel(
                     .select(com.neon.android.geohash.ChannelID.Mesh)
             } catch (_: Exception) { }
         }
-        joinChannel(com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL)
+    }
+
+    private fun ensureCampMeshMembership() {
+        channelManager.ensureJoined(
+            com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL,
+            meshService.myPeerID
+        )
     }
     
     fun leaveChannel(channel: String) {

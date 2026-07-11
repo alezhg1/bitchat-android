@@ -104,12 +104,14 @@ fun CampTerrainMapView(
                 }
                 map.overlays.removeAll { it is Marker }
                 located.forEach { entry ->
-                    val roleLabel = UserRole.fromString(entry.role).displayNameRu
+                    val role = UserRole.fromString(entry.role)
+                    val roleLabel = role.displayNameRu
                     val marker = Marker(map).apply {
                         position = GeoPoint(entry.latitude, entry.longitude)
                         title = entry.fio
                         snippet = "$roleLabel · ${entry.staticId.take(8)}"
-                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        icon = roleMarkerDrawable(context, role)
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                     }
                     map.overlays.add(marker)
                     marker.showInfoWindow()

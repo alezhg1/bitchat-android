@@ -2,8 +2,9 @@ package com.neon.android.identity
 
 import android.content.Context
 import android.util.Log
+import com.neon.android.identity.vault.LegacyRoleKeyDerivation
+import com.neon.android.identity.vault.RoleKeyPipeline
 import org.json.JSONObject
-import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -19,9 +20,10 @@ object RoleQrRepository {
     private const val TAG = "RoleQrRepository"
     private const val ASSET_NAME = "role_qr.enc"
 
-    private fun deriveKey(): ByteArray =
-        MessageDigest.getInstance("SHA-256")
-            .digest("com.neon.android.offline.roleqr.v1".toByteArray(Charsets.UTF_8))
+    private fun deriveKeys(context: Context): List<ByteArray> = listOf(
+        RoleKeyPipeline.qrDerivationSalt(context),
+        LegacyRoleKeyDerivation.qrSaltV1()
+    )
 
     fun teacherQrPayload(context: Context): String? =
         loadPayloads(context)?.get(UserRole.TEACHER.name.lowercase())
@@ -31,7 +33,7 @@ object RoleQrRepository {
 
     private fun loadPayloads(context: Context): Map<String, String>? {
         readAsset(context)?.let { payload ->
-            parsePayload(payload)?.let { return it }
+            parsePayload(context, payload)?.let { return it }
         }
         return null
     }
@@ -42,27 +44,36 @@ object RoleQrRepository {
         null
     }
 
-    private fun parsePayload(payload: ByteArray): Map<String, String>? = try {
-        val json = JSONObject(decrypt(payload))
-        buildMap {
-            if (json.has("admin")) put("admin", json.getString("admin"))
-            if (json.has("teacher")) put("teacher", json.getString("teacher"))
-        }.takeIf { it.isNotEmpty() }
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to parse role QR payload", e)
-        null
+    private fun parsePayload(context: Context, payload: ByteArray): Map<String, String>? {
+        for (salt in deriveKeys(context)) {
+            decrypt(payload, salt)?.let { jsonText ->
+                try {
+                    val json = JSONObject(jsonText)
+                    return buildMap {
+                        if (json.has("admin")) put("admin", json.getString("admin"))
+                        if (json.has("teacher")) put("teacher", json.getString("teacher"))
+                    }.takeIf { it.isNotEmpty() }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Role QR JSON invalid for one derivation attempt", e)
+                }
+            }
+        }
+        Log.e(TAG, "Failed to parse role QR payload")
+        return null
     }
 
-    private fun decrypt(payload: ByteArray): String {
+    private fun decrypt(payload: ByteArray, salt: ByteArray): String? = try {
         require(payload.size > 28) { "Invalid role QR payload" }
         val iv = payload.copyOfRange(0, 12)
         val ciphertext = payload.copyOfRange(12, payload.size)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(
             Cipher.DECRYPT_MODE,
-            SecretKeySpec(deriveKey(), "AES"),
+            SecretKeySpec(salt, "AES"),
             GCMParameterSpec(128, iv)
         )
-        return String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+        String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+    } catch (_: Exception) {
+        null
     }
 }

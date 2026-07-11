@@ -283,8 +283,10 @@ private fun ChannelHeader(
     val context = androidx.compose.ui.platform.LocalContext.current
     val isGroup = com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)
     val isTeachers = channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL
+    val isCampMesh = channel == com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL
     val title = when {
         isGroup -> com.neon.android.mesh.GroupChatManager.displayName(context, channel)
+        isCampMesh -> com.neon.android.geohash.CampChatManager.getDisplayName(context)
         channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL -> "Преподы"
         channel.startsWith("#") -> channel.removePrefix("#")
         else -> channel
@@ -324,7 +326,10 @@ private fun ChannelHeader(
         
         // Title - perfectly centered regardless of other elements
         Text(
-            text = if (isGroup) title else stringResource(R.string.chat_channel_prefix, title),
+            text = when {
+                isGroup || isCampMesh || isTeachers -> title
+                else -> stringResource(R.string.chat_channel_prefix, title)
+            },
             style = MaterialTheme.typography.titleMedium,
             color = Color(0xFFFF9500),
             modifier = Modifier
@@ -341,14 +346,14 @@ private fun ChannelHeader(
             TextButton(onClick = {
                 when {
                     isGroup -> showDeleteConfirm = true
-                    isTeachers -> onBackClick()
+                    isTeachers || isCampMesh -> onBackClick()
                     else -> onLeaveChannel()
                 }
             }) {
                 Text(
                     text = when {
                         isGroup -> "Удалить"
-                        isTeachers -> "К лагерю"
+                        isTeachers || isCampMesh -> "К лагерю"
                         else -> stringResource(R.string.chat_leave)
                     },
                     style = MaterialTheme.typography.bodySmall,

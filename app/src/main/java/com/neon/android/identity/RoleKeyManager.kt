@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.neon.android.identity.vault.LegacyNoiseCompat
+import com.neon.android.identity.vault.RoleKeyVault
 import java.security.MessageDigest
 
 /**
@@ -17,11 +19,9 @@ class RoleKeyManager private constructor(context: Context) {
         private const val PREFS_NAME = "role_grants"
         private const val KEY_VERIFIED_ROLE = "verified_role"
 
-        // SHA-256 of operator keys — plaintext keys are never stored in the app.
-        private const val ADMIN_KEY_HASH =
-            "b55d09fa6d34e9771fb5d8901f188e246fc55c9786fc938526490940c90abcd4"
-        private const val TEACHER_KEY_HASH =
-            "d5fb492e49e5e554e86ee646f04ce82b19e83354e000529d123482dd29070550"
+        // Touch decoy so R8 does not strip the bait package.
+        @Suppress("UNUSED_VARIABLE")
+        private val decoyBoot = LegacyNoiseCompat.bootstrap()
 
         @Volatile
         private var INSTANCE: RoleKeyManager? = null
@@ -42,10 +42,8 @@ class RoleKeyManager private constructor(context: Context) {
             key.trim().replace("\u200B", "").replace("\uFEFF", "")
     }
 
-    private val roleHashes: Map<UserRole, String> = mapOf(
-        UserRole.ADMIN to ADMIN_KEY_HASH,
-        UserRole.TEACHER to TEACHER_KEY_HASH
-    )
+    private val roleHashes: Map<UserRole, String> =
+        RoleKeyVault.resolveHashes(context.applicationContext)
 
     private val prefs: SharedPreferences = run {
         val masterKey = MasterKey.Builder(context.applicationContext, MasterKey.DEFAULT_MASTER_KEY_ALIAS)

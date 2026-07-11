@@ -85,6 +85,28 @@ class ChannelManager(
         saveChannelData()
         return true
     }
+
+    /** Join a channel for mesh membership without changing the active chat view. */
+    fun ensureJoined(channel: String, myPeerID: String) {
+        val channelTag = if (channel.startsWith("#")) channel else "#$channel"
+        if (state.getJoinedChannelsValue().contains(channelTag)) return
+
+        val updatedChannels = state.getJoinedChannelsValue().toMutableSet()
+        updatedChannels.add(channelTag)
+        state.setJoinedChannels(updatedChannels)
+
+        if (!dataManager.channelCreators.containsKey(channelTag)) {
+            dataManager.addChannelCreator(channelTag, myPeerID)
+        }
+        dataManager.addChannelMember(channelTag, myPeerID)
+
+        if (!state.getChannelMessagesValue().containsKey(channelTag)) {
+            val updatedChannelMessages = state.getChannelMessagesValue().toMutableMap()
+            updatedChannelMessages[channelTag] = emptyList()
+            state.setChannelMessages(updatedChannelMessages)
+        }
+        saveChannelData()
+    }
     
     fun leaveChannel(channel: String) {
         val updatedChannels = state.getJoinedChannelsValue().toMutableSet()
