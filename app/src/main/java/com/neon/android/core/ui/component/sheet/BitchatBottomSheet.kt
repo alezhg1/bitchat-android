@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 fun BitchatBottomSheet(
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    sheetGesturesEnabled: Boolean = true,
     onDismissRequest: () -> Unit,
     content: @Composable (ColumnScope.() -> Unit),
 ) {
@@ -25,7 +24,6 @@ fun BitchatBottomSheet(
         modifier = modifier.statusBarsPadding(),
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        sheetGesturesEnabled = sheetGesturesEnabled,
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.background,
