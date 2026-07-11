@@ -493,7 +493,7 @@ private fun ChatFloatingHeader(
                     onBackClick = {
                         when {
                             selectedPrivatePeer != null -> viewModel.endPrivateChat()
-                            currentChannel != null -> viewModel.switchToChannel(null)
+                            currentChannel != null -> viewModel.switchToCampChat()
                         }
                     },
                     onSidebarClick = onSidebarToggle,

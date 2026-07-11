@@ -56,6 +56,17 @@ class MessageManager(
         )
         addMessage(sys)
     }
+
+    fun addChannelSystemMessage(channel: String, text: String) {
+        val sys = BitchatMessage(
+            sender = "system",
+            content = text,
+            timestamp = Date(),
+            isRelay = false,
+            channel = channel
+        )
+        addChannelMessage(channel, sys)
+    }
     
     fun clearMessages() {
         state.setMessages(emptyList())

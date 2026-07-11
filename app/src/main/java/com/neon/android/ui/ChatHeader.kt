@@ -282,6 +282,7 @@ private fun ChannelHeader(
     val colorScheme = MaterialTheme.colorScheme
     val context = androidx.compose.ui.platform.LocalContext.current
     val isGroup = com.neon.android.mesh.GroupChatManager.isGroupChannel(channel)
+    val isTeachers = channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL
     val title = when {
         isGroup -> com.neon.android.mesh.GroupChatManager.displayName(context, channel)
         channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL -> "Преподы"
@@ -337,9 +338,19 @@ private fun ChannelHeader(
                     Icon(Icons.Default.QrCode2, contentDescription = "QR чата", tint = colorScheme.primary)
                 }
             }
-            TextButton(onClick = { if (isGroup) showDeleteConfirm = true else onLeaveChannel() }) {
+            TextButton(onClick = {
+                when {
+                    isGroup -> showDeleteConfirm = true
+                    isTeachers -> onBackClick()
+                    else -> onLeaveChannel()
+                }
+            }) {
                 Text(
-                    text = if (isGroup) "Удалить" else stringResource(R.string.chat_leave),
+                    text = when {
+                        isGroup -> "Удалить"
+                        isTeachers -> "К лагерю"
+                        else -> stringResource(R.string.chat_leave)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Red
                 )
@@ -423,6 +434,8 @@ private fun MainHeader(
                 val channelName = currentChannel
                 val locationChannel = selectedLocationChannel
                 val subtitle = when {
+                    channelName != null && channelName == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL ->
+                        "Канал · Преподы (только чтение для учеников)"
                     channelName != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(channelName) ->
                         "Группа · ${com.neon.android.mesh.GroupChatManager.displayName(context, channelName)}"
                     channelName != null -> "Канал · ${channelName.removePrefix("#").removePrefix("grp:")}"
@@ -519,6 +532,8 @@ private fun CurrentChatBadge(
     val activeChannel = currentChannel
     
     val (badgeText, badgeColor) = when {
+        activeChannel != null && activeChannel == CampChatManager.TEACHERS_CHANNEL ->
+            "Преподы" to Color(0xFFFF9500)
         activeChannel != null && com.neon.android.mesh.GroupChatManager.isGroupChannel(activeChannel) ->
             com.neon.android.mesh.GroupChatManager.displayName(context, activeChannel) to Color(0xFFFF9500)
         activeChannel != null -> activeChannel.removePrefix("#") to Color(0xFFFF9500)

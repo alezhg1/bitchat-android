@@ -666,7 +666,10 @@ class ChatViewModel(
         val currentChannelValue = state.getCurrentChannelValue()
 
         if (!com.neon.android.geohash.CampChatManager.canPostInChannel(userRole, currentChannelValue)) {
-            messageManager.addSystemMessage(
+            val channel = currentChannelValue
+                ?: com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL
+            messageManager.addChannelSystemMessage(
+                channel,
                 "В канал «преподы» могут писать только преподаватели и администраторы."
             )
             return

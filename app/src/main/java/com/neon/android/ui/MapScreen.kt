@@ -98,6 +98,7 @@ fun MapScreen(
   BitchatBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
+    sheetGesturesEnabled = false,
     modifier = modifier
   ) {
     BitchatSheetTopBar(

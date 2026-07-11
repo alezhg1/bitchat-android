@@ -1,5 +1,6 @@
 package com.neon.android.ui
 
+import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,6 +75,20 @@ fun CampTerrainMapView(
                     )
                     isClickable = true
                     isFocusable = true
+                    isFocusableInTouchMode = true
+                    setOnTouchListener { v, event ->
+                        if (event.actionMasked == MotionEvent.ACTION_DOWN ||
+                            event.actionMasked == MotionEvent.ACTION_MOVE ||
+                            event.actionMasked == MotionEvent.ACTION_POINTER_DOWN
+                        ) {
+                            var parent = v.parent
+                            while (parent != null) {
+                                parent.requestDisallowInterceptTouchEvent(true)
+                                parent = parent.parent
+                            }
+                        }
+                        false
+                    }
                     CampOfflineMapProvider.setupMapView(this)
                     campAnchor?.let { CampOfflineMapProvider.centerMap(this, it) }
                     onResume()
