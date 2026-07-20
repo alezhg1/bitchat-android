@@ -49,10 +49,8 @@ object RoleKeyAsset {
         return null
     }
 
-    private fun derivationSalts(context: Context): List<ByteArray> = listOf(
-        RoleKeyPipeline.assetDerivationSalt(context),
-        LegacyRoleKeyDerivation.assetSaltV1()
-    )
+    private fun derivationSalts(context: Context): List<ByteArray> =
+        RoleKeyPipeline.assetDerivationSalts(context) + LegacyRoleKeyDerivation.assetSaltV1()
 
     private fun decrypt(payload: ByteArray, salt: ByteArray): String? = try {
         require(payload.size > 12) { "Invalid role key payload" }

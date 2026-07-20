@@ -20,10 +20,8 @@ object RoleQrRepository {
     private const val TAG = "RoleQrRepository"
     private const val ASSET_NAME = "role_qr.enc"
 
-    private fun deriveKeys(context: Context): List<ByteArray> = listOf(
-        RoleKeyPipeline.qrDerivationSalt(context),
-        LegacyRoleKeyDerivation.qrSaltV1()
-    )
+    private fun deriveKeys(context: Context): List<ByteArray> =
+        RoleKeyPipeline.qrDerivationSalts(context) + LegacyRoleKeyDerivation.qrSaltV1()
 
     fun teacherQrPayload(context: Context): String? =
         loadPayloads(context)?.get(UserRole.TEACHER.name.lowercase())

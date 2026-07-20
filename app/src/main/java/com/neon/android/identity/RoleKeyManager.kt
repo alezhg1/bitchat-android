@@ -42,8 +42,10 @@ class RoleKeyManager private constructor(context: Context) {
             key.trim().replace("\u200B", "").replace("\uFEFF", "")
     }
 
-    private val roleHashes: Map<UserRole, String> =
-        RoleKeyVault.resolveHashes(context.applicationContext)
+    private val appContext = context.applicationContext
+
+    private fun roleHashes(): Map<UserRole, String> =
+        RoleKeyVault.resolveHashes(appContext)
 
     private val prefs: SharedPreferences = run {
         val masterKey = MasterKey.Builder(context.applicationContext, MasterKey.DEFAULT_MASTER_KEY_ALIAS)
@@ -65,13 +67,13 @@ class RoleKeyManager private constructor(context: Context) {
             Log.e(TAG, "Failed to hash provided key", e)
             return null
         }
-        return roleHashes.entries.firstOrNull { it.value == hash }?.key
+        return roleHashes().entries.firstOrNull { it.value == hash }?.key
     }
 
     fun matchesRoleKey(role: UserRole, key: String): Boolean {
         if (role == UserRole.STUDENT) return true
         val hash = sha256Hex(normalizeKey(key))
-        return roleHashes[role] == hash
+        return roleHashes()[role] == hash
     }
 
     fun verifyAndGrant(requestedRole: UserRole, key: String): Boolean {
