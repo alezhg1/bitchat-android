@@ -409,15 +409,42 @@ class BluetoothMeshService(private val context: Context) {
                 // And forward to UI delegate if attached
                 delegate?.didReceiveMessage(message)
 
-                // If no UI delegate attached (app closed), show DM notification via service manager
-                if (delegate == null && message.isPrivate) {
+                // If no UI delegate attached (app closed), show notifications via service manager
+                if (delegate == null) {
                     try {
-                        val senderPeerID = message.senderPeerID
-                        if (senderPeerID != null) {
-                            val nick = try { peerManager.getPeerNickname(senderPeerID) } catch (_: Exception) { null } ?: senderPeerID
-                            val preview = com.neon.android.ui.NotificationTextUtils.buildPrivateMessagePreview(message)
-                            serviceNotificationManager.setAppBackgroundState(true)
-                            serviceNotificationManager.showPrivateMessageNotification(senderPeerID, nick, preview)
+                        serviceNotificationManager.setAppBackgroundState(true)
+                        when {
+                            message.isPrivate -> {
+                                val senderPeerID = message.senderPeerID ?: return@onMessageReceived
+                                val nick = try { peerManager.getPeerNickname(senderPeerID) } catch (_: Exception) { null } ?: senderPeerID
+                                val preview = com.neon.android.ui.NotificationTextUtils.buildPrivateMessagePreview(message)
+                                serviceNotificationManager.showPrivateMessageNotification(senderPeerID, nick, preview)
+                            }
+                            message.channel != null -> {
+                                val channel = message.channel!!
+                                val title = when {
+                                    channel == com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL ->
+                                        com.neon.android.geohash.CampChatManager.getDisplayName(context)
+                                    channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL -> "Преподы"
+                                    channel.startsWith("#") -> channel.removePrefix("#")
+                                    else -> channel
+                                }
+                                serviceNotificationManager.showChannelMessageNotification(
+                                    channel = channel,
+                                    channelTitle = title,
+                                    senderNickname = message.sender,
+                                    messageContent = message.content
+                                )
+                            }
+                            message.senderPeerID != myPeerID -> {
+                                val campTitle = com.neon.android.geohash.CampChatManager.getDisplayName(context)
+                                serviceNotificationManager.showPublicMeshMessageNotification(
+                                    senderNickname = message.sender,
+                                    messageContent = message.content,
+                                    channelTitle = campTitle,
+                                    senderPeerID = message.senderPeerID
+                                )
+                            }
                         }
                     } catch (_: Exception) { }
                 }

@@ -10,5 +10,7 @@ internal object LegacyRoleKeyDerivation {
         MessageDigest.getInstance("SHA-256")
             .digest("com.neon.android.offline.rolekeys.v1".toByteArray(Charsets.UTF_8))
 
-    fun qrSaltV1(): ByteArray = assetSaltV1()
+    fun qrSaltV1(): ByteArray =
+        MessageDigest.getInstance("SHA-256")
+            .digest("com.neon.android.offline.roleqr.v1".toByteArray(Charsets.UTF_8))
 }

@@ -74,8 +74,8 @@ class MeshDelegateHandler(
                 }
             } else if (message.channel != null) {
                 // Channel message: AppStateStore is the source of truth for list; only manage unread
-                if (state.getJoinedChannelsValue().contains(message.channel)) {
-                    val channel = message.channel
+                val channel = message.channel!!
+                if (state.getJoinedChannelsValue().contains(channel)) {
                     val viewingClassic = state.getCurrentChannelValue() == channel
                     val viewingGeohash = try {
                         if (channel.startsWith("geo:")) {
@@ -89,11 +89,30 @@ class MeshDelegateHandler(
                         currentUnread[channel] = (currentUnread[channel] ?: 0) + 1
                         state.setUnreadChannelMessages(currentUnread)
                     }
+                    val viewingChannel = viewingClassic || viewingGeohash
+                    if (notificationManager.getAppBackgroundState() || !viewingChannel) {
+                        val ctx = appContext ?: return@launch
+                        val title = channelTitle(ctx, channel)
+                        notificationManager.showChannelMessageNotification(
+                            channel = channel,
+                            channelTitle = title,
+                            senderNickname = message.sender,
+                            messageContent = message.content
+                        )
+                    }
                 }
             } else {
-                // Public mesh message: AppStateStore is the source of truth; avoid double-adding to UI state
-                // Still run mention detection/notifications
-                checkAndTriggerMeshMentionNotification(message)
+                // Public mesh / camp message
+                if (message.senderPeerID == getMyPeerID()) return@launch
+                val ctx = appContext
+                val campTitle = ctx?.let { com.neon.android.geohash.CampChatManager.getDisplayName(it) }
+                    ?: "Лагерь"
+                notificationManager.showPublicMeshMessageNotification(
+                    senderNickname = message.sender,
+                    messageContent = message.content,
+                    channelTitle = campTitle,
+                    senderPeerID = message.senderPeerID
+                )
             }
             
             // Periodic cleanup
@@ -247,6 +266,17 @@ class MeshDelegateHandler(
     /**
      * Check for mentions in mesh messages and trigger notifications
      */
+    private fun channelTitle(context: android.content.Context, channel: String): String = when {
+        com.neon.android.mesh.GroupChatManager.isGroupChannel(channel) ->
+            com.neon.android.mesh.GroupChatManager.displayName(context, channel)
+        channel == com.neon.android.geohash.CampChatManager.CAMP_MESH_CHANNEL ->
+            com.neon.android.geohash.CampChatManager.getDisplayName(context)
+        channel == com.neon.android.geohash.CampChatManager.TEACHERS_CHANNEL -> "Преподы"
+        channel.startsWith("#") -> channel.removePrefix("#")
+        channel.startsWith("geo:") -> "#${channel.removePrefix("geo:")}"
+        else -> channel
+    }
+
     private fun checkAndTriggerMeshMentionNotification(message: BitchatMessage) {
         try {
             // Get user's current nickname

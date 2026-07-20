@@ -52,7 +52,8 @@ class GeohashViewModel(
         messageManager = messageManager,
         repo = repo,
         scope = viewModelScope,
-        dataManager = dataManager
+        dataManager = dataManager,
+        notificationManager = notificationManager
     )
     private val dmHandler = NostrDirectMessageHandler(
         application = application,

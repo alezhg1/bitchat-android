@@ -2,10 +2,34 @@
 # Plaintext keys stay with the operator only — never commit them to git.
 
 param(
-    [Parameter(Mandatory = $true)][string]$AdminKey,
-    [Parameter(Mandatory = $true)][string]$TeacherKey,
-    [string]$PackageId = "info.nlogn.chat"
+    [string]$AdminKey,
+    [string]$TeacherKey,
+    [string]$PackageId = "info.nlogn.chat",
+    [switch]$GenerateNewKeys
 )
+
+if ($GenerateNewKeys) {
+    function New-CampKey([string]$Role) {
+        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        $suffix = -join (1..48 | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
+        return "NLOON-${Role}-OFFLINE-2026-$suffix"
+    }
+    $AdminKey = New-CampKey "ADMIN"
+    $TeacherKey = New-CampKey "TEACHER"
+    $keysFile = Join-Path (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) "tools\operator_keys.local.txt"
+    @"
+# CAMP OPERATOR KEYS — local only, never commit
+Admin:   $AdminKey
+Teacher: $TeacherKey
+Generated: $(Get-Date -Format o)
+PackageId: $PackageId
+"@ | Out-File -FilePath $keysFile -Encoding UTF8
+    Write-Host "New operator keys saved to $keysFile"
+}
+
+if ([string]::IsNullOrWhiteSpace($AdminKey) -or [string]::IsNullOrWhiteSpace($TeacherKey)) {
+    throw "Provide -AdminKey and -TeacherKey, or use -GenerateNewKeys"
+}
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)

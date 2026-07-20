@@ -988,6 +988,10 @@ class ChatViewModel(
         return meshService.getDebugStatus()
     }
     
+    fun setAppBackgroundState(inBackground: Boolean) {
+        notificationManager.setAppBackgroundState(inBackground)
+    }
+
     fun setCurrentPrivateChatPeer(peerID: String?) {
         notificationManager.setCurrentPrivateChatPeer(peerID)
     }

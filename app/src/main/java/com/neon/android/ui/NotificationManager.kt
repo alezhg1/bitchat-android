@@ -144,6 +144,7 @@ class NotificationManager(
      * Show a notification for a private message with proper grouping and state awareness
      */
     fun showPrivateMessageNotification(senderPeerID: String, senderNickname: String, messageContent: String) {
+        if (!notificationManager.areNotificationsEnabled()) return
         // Only show notifications if app is in background OR user is not viewing this specific chat
         val shouldNotify = isAppInBackground || (!isAppInBackground && currentPrivateChatPeer != senderPeerID)
         
@@ -435,6 +436,7 @@ class NotificationManager(
         isFirstMessage: Boolean = false,
         locationName: String? = null
     ) {
+        if (!notificationManager.areNotificationsEnabled()) return
         // Only show notifications if app is in background OR user is not viewing this specific geohash
         val shouldNotify = isAppInBackground || (!isAppInBackground && currentGeohash != geohash)
 
@@ -646,6 +648,123 @@ class NotificationManager(
         }
 
         Log.d(TAG, "Cleared notifications for geohash: $geohash")
+    }
+
+    /**
+     * Show a notification for a public mesh / camp message.
+     */
+    fun showPublicMeshMessageNotification(
+        senderNickname: String,
+        messageContent: String,
+        channelTitle: String = context.getString(R.string.app_name),
+        senderPeerID: String? = null
+    ) {
+        if (!notificationManager.areNotificationsEnabled()) return
+
+        val isViewingCampChat = currentPrivateChatPeer == null && currentGeohash == null
+        val shouldNotify = isAppInBackground || !isViewingCampChat
+        if (!shouldNotify) {
+            Log.d(TAG, "Skipping public mesh notification - viewing camp chat in foreground")
+            return
+        }
+
+        val meshPublicKey = "mesh_public"
+        val notification = PendingNotification(
+            senderPeerID = senderPeerID ?: meshPublicKey,
+            senderNickname = senderNickname,
+            messageContent = messageContent,
+            timestamp = System.currentTimeMillis()
+        )
+        pendingNotifications.computeIfAbsent(meshPublicKey) { mutableListOf() }.add(notification)
+        showGroupedMeshNotification(
+            groupKey = meshPublicKey,
+            notificationId = 4001,
+            contentTitle = channelTitle,
+            latest = notification,
+            messageCount = pendingNotifications[meshPublicKey]?.size ?: 1
+        )
+        if (pendingNotifications.size > 1) {
+            showSummaryNotification()
+        }
+    }
+
+    /**
+     * Show a notification for a named mesh channel (#лагерь, groups, #преподы, …).
+     */
+    fun showChannelMessageNotification(
+        channel: String,
+        channelTitle: String,
+        senderNickname: String,
+        messageContent: String
+    ) {
+        if (!notificationManager.areNotificationsEnabled()) return
+
+        val groupKey = "channel_${channel.hashCode()}"
+        val notification = PendingNotification(
+            senderPeerID = groupKey,
+            senderNickname = senderNickname,
+            messageContent = messageContent,
+            timestamp = System.currentTimeMillis()
+        )
+        pendingNotifications.computeIfAbsent(groupKey) { mutableListOf() }.add(notification)
+        showGroupedMeshNotification(
+            groupKey = groupKey,
+            notificationId = 5000 + channel.hashCode(),
+            contentTitle = channelTitle,
+            latest = notification,
+            messageCount = pendingNotifications[groupKey]?.size ?: 1
+        )
+        if (pendingNotifications.size > 1) {
+            showSummaryNotification()
+        }
+    }
+
+    private fun showGroupedMeshNotification(
+        groupKey: String,
+        notificationId: Int,
+        contentTitle: String,
+        latest: PendingNotification,
+        messageCount: Int
+    ) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            NOTIFICATION_REQUEST_CODE + groupKey.hashCode(),
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val contentText = "${latest.senderNickname}: ${latest.messageContent}"
+        val title = if (messageCount == 1) contentTitle else "$contentTitle ($messageCount)"
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(contentText)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setShowWhen(true)
+            .setWhen(latest.timestamp)
+
+        if (pendingNotifications.size > 1) {
+            builder.setGroup(GROUP_KEY_DM)
+        }
+        if (messageCount > 1) {
+            val style = NotificationCompat.InboxStyle().setBigContentTitle(title)
+            pendingNotifications[groupKey]?.takeLast(5)?.forEach { notif ->
+                style.addLine("${notif.senderNickname}: ${notif.messageContent}")
+            }
+            builder.setStyle(style)
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
+        }
+
+        notificationManager.notify(notificationId, builder.build())
+        Log.d(TAG, "Displayed mesh notification: $title")
     }
 
     /**

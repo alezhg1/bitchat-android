@@ -23,7 +23,8 @@ class GeohashMessageHandler(
     private val messageManager: MessageManager,
     private val repo: GeohashRepository,
     private val scope: CoroutineScope,
-    private val dataManager: com.neon.android.ui.DataManager
+    private val dataManager: com.neon.android.ui.DataManager,
+    private val notificationManager: com.neon.android.ui.NotificationManager? = null
 ) {
     companion object { private const val TAG = "GeohashMessageHandler" }
 
@@ -104,7 +105,30 @@ class GeohashMessageHandler(
                         if (hasNonce) NostrProofOfWork.calculateDifficulty(event.id).takeIf { it > 0 } else null
                     } catch (_: Exception) { null }
                 )
-                withContext(Dispatchers.Main) { messageManager.addChannelMessage("geo:$subscribedGeohash", msg) }
+                withContext(Dispatchers.Main) {
+                    messageManager.addChannelMessage("geo:$subscribedGeohash", msg)
+                    val campGeo = com.neon.android.geohash.CampChatManager.getCampGeohash(application)
+                    val isCampGeo = campGeo != null && campGeo.equals(subscribedGeohash, ignoreCase = true)
+                    if (isCampGeo) {
+                        val viewingGeo = try {
+                            val selected = state.selectedLocationChannel.value
+                            selected is com.neon.android.geohash.ChannelID.Location &&
+                                selected.channel.geohash.equals(subscribedGeohash, ignoreCase = true) &&
+                                state.getCurrentChannelValue() == null &&
+                                state.getSelectedPrivateChatPeerValue() == null
+                        } catch (_: Exception) { false }
+                        if (notificationManager != null &&
+                            (notificationManager.getAppBackgroundState() || !viewingGeo)
+                        ) {
+                            notificationManager.showGeohashNotification(
+                                geohash = subscribedGeohash,
+                                senderNickname = senderName,
+                                messageContent = event.content,
+                                locationName = com.neon.android.geohash.CampChatManager.getDisplayName(application)
+                            )
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "onEvent error: ${e.message}")
             }
